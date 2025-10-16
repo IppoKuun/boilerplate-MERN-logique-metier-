@@ -38,7 +38,7 @@ export function sanitizeObject(value) {
 }
 
 // suppose: req.body a déjà été passé dans sanitize() + Joi
-export function buildSafePatch(obj, allowedPaths) {
+export default function buildSafePatch(obj, allowedPaths) {
   const patch = {};
   for (const path of allowedPaths) {
     if (typeof path !== "string" || !path) continue;
@@ -67,3 +67,4 @@ export function pick(obj, keys) {
   }
   return out;
 }
+

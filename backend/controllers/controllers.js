@@ -1,41 +1,53 @@
-// controllers/vehicles.controller.js
-// But : lister les véhicules avec filtres, tri whitelisté et pagination standardisée.
+import { queryBuilder } from "../utils/queryBuilder"
+import {pagination, buildMeta} from "../utils/pagination";
+import Product from "../models/product"
+import buildSafePatch from "../utils/sanitize";
 
-import Vehicle from "../models/Vehicle.js";
-import { buildQuery } from "../utils/queryBuilder.js";
-import { getPagination, buildMeta } from "../utils/pagination.js";
 
-const MAX_LIMIT = 100; // garde-fou serveur : personne ne peut demander > 100 items/page
+export default async function list(req, res){
 
-export async function list(req, res) {
-  // (1) Pagination bornee depuis req.query
-  // "Humain" : calcule page/limit/skip proprement (valeurs par défaut, mini/maxi, offset)
-  const { page, limit, skip } = getPagination(req.query, {
-    defaultLimit: 20,
-    maxLimit: MAX_LIMIT,
-    defaultPage: 1,
-  });
+  const {filter, sort, sortBy, order } = queryBuilder(req.query,{
+    equals: new Set ([ "nom", "category", "slug" ]),
+    ranges: new Set([ "price" ]),
+    allowedSort: new Set ([ "price" ]),
+  })
 
-  // (2) Filtres + tri sécurisés depuis req.query
-  // "Humain" : on ne garde que les champs autorisés et on force un tri whitelisté
-  const { filter, sort, sortBy, order } = buildQuery(req.query, {
-    equals: new Set(["make", "model", "status", "fuel", "transmission", "color"]),
-    ranges: new Set(["price", "year", "mileage"]),
-    allowedSort: new Set(["createdAt", "price", "year", "mileage"]),
-  });
+    const {page, limit, skip} = pagination(req.query, 
+    {defaultLimit : 20, maxLimit : 100, defaultPage : 1})
+    
+    const {items, total} = await Promise.all([
+      Product.find(filter).sort(sort).skip(skip).limit(limit).lean(),
+      Product.countDocuments(filter)
+    ])
+  const meta = buildMeta({ page, limit, total, sortBy, order})
 
-  // (3) Lecture DB en parallèle (liste + total)
-  // "Humain" : va chercher la page demandée et, en même temps, compte le total pour la pagination
-  const [items, total] = await Promise.all([
-    Vehicle.find(filter).sort(sort).skip(skip).limit(limit).lean(), // objets JS simples = plus rapide
-    Vehicle.countDocuments(filter),
-  ]);
+  return res.status(200).json(items, meta)
+}
 
-  // (4) Meta uniforme pour le front (pages, hasNext, etc.)
-  // "Humain" : calcule un résumé standard pour la pagination côté UI
-  const meta = buildMeta({ total, page, limit, sortBy, order });
+export default async function getProduct(req, res){
+  const id = req.params.id
+  const doc = await Product.findById(id)
+  if (!doc) return res.status(404).json({message:"Produit non trouvé"})
+  return res.status(200).json(doc)
+}
 
-  // (5) Réponse propre et stable
-  // "Humain" : le front reçoit la liste + toutes les infos de pagination/tri dans meta
-  return res.json({ items, meta });
+export default async function postProduct(req, res){
+  const newProduct = await Product.create(req.body)
+    return res.status(201).json({message: "Porduit ajoutez avec succées"})
+}
+
+export default async function deleteProduct(req, res){
+  const id = req.params.id
+  const dltProduct = await Product.findByIdAndDelete(id)
+  if (!dltProduct){ return res.status(404).json({message: "Produit introuvable"})}
+  return res.status(200).json({message : "Produit supp avec succès"})
+}
+
+export default async function  updateProduct(req, res){
+  const id = req.params.id
+  const allowedPart = buildSafePatch(req.body, ["nom", "description", "price", "category", "slug",
+    "shortDesc", "images", "isActive",]);
+  const updProduct = await Product.findByIdAndUpdate(id, allowedPart, {new:true})
+    if (!updProduct){ return res.status(404).json({message: "Produit introuvable"})}
+  return res.status(200).json({updProduct})
 }

@@ -9,7 +9,8 @@ export default function pagination(query = {},
         const page = toInt(query.page, defaultPage)
         const rawLimit = toInt(query.limit, defaultLimit)
         const limit = mathmin(maxLimit, rawLimit)
-        const skip = page = (page - 1) * limit  
+        const skip = page = (page - 1) * limit 
+        return { page, limit, skip };
     }
 
     export default function buildMeta(page, limit, total, sortBy, order){

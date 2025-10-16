@@ -27,7 +27,7 @@ export default function setRanges(query, champ){
 }
 
 
-    function queryBuilder(){
+    export default function queryBuilder(){
         const query = {}, 
         {
             allowedSort = DEFAULT_ALLOWED_SORT,
@@ -42,6 +42,7 @@ export default function setRanges(query, champ){
     }
 
     for ( c in ranges ) {
+      const ranges = setRanges(query, c)
       if (ranges) filter[c] = ranges
     }    
   

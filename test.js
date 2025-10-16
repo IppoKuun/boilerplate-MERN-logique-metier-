@@ -1,92 +1,184 @@
-// utils/queryBuilder.js
-// Objectif : transformer des query params en { filter, sort, sortBy, order } SÉCURISÉS.
-// Pensé pour Vehicle, mais assez générique.
-// Traduction humaine : on ne garde que les filtres autorisés, on gère les plages min/max,
-// et on whiteliste le tri pour éviter les surprises.
+// routes/vehicles.routes.js
+// But : exposer un CRUD basique pour Vehicle, 100% backoffice (protégé par auth).
+// Traduction “humaine” : on protège toutes les routes, on valide/sanitize l’entrée,
+// puis on délègue au contrôleur. Simple et lisible.
 
-const DEFAULT_ALLOWED_SORT = new Set(["createdAt", "price", "year", "mileage"]);
-const DEFAULT_EQUALS = new Set(["make", "model", "status", "fuel", "transmission", "color"]);
-const DEFAULT_RANGES = new Set(["price", "year", "mileage"]);
+import { Router } from "express";
+import requireAuth from "../middlewares/requireAuth.js";
+import validate from "../middlewares/validate.js";
+import * as ctrl from "../controllers/vehicles.controller.js";
 
-const toNum = (v) => {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : undefined; // Traduction : si pas un nombre, on ignore.
-};
+// Schémas Joi séparés (lisibilité + réutilisation)
+import {
+  listVehicles,      // validation de req.query pour la liste
+  createVehicle,     // validation de req.body pour POST
+  updateVehicle,     // validation de req.body pour PATCH
+  idParam,           // validation de req.params (/:id)
+} from "../validators/vehicles.validator.js";
 
-function readRange(query, field) {
-  // Supporte price[min]=... / price[max]=...
-  // ET fallback si le parseur n’est pas “nested”: query["price[min]"], query["price[max]"].
-  const obj = query?.[field];
-  const min =
-    (obj && toNum(obj.min)) ??
-    toNum(query?.[`${field}[min]`]) ??
-    toNum(query?.[`${field}.min`]);
-  const max =
-    (obj && toNum(obj.max)) ??
-    toNum(query?.[`${field}[max]`]) ??
-    toNum(query?.[`${field}.max`]);
+const router = Router();
 
-  const out = {};
-  if (typeof min === "number") out.$gte = min;
-  if (typeof max === "number") out.$lte = max;
-  return Object.keys(out).length ? out : undefined; // Traduction : si rien, on ne met pas de filtre.
-}
+// Toutes les routes sont privées (backoffice uniquement)
+router.use(requireAuth());
 
-export function buildQuery(
-  query = {},
-  {
-    equals = DEFAULT_EQUALS,       // champs filtrables en égalité stricte
-    ranges = DEFAULT_RANGES,       // champs avec min/max
-    allowedSort = DEFAULT_ALLOWED_SORT, // champs autorisés pour le tri
-  } = {}
-) {
-  const filter = {};
+// LISTE : GET /api/vehicles?make=...&price[min]=...
+router.get(
+  "/",
+  validate({ query: listVehicles }), // on nettoie/valide les filtres + pagination/tri
+  ctrl.list
+);
 
-  // 1) Filtres "égalité" (ex: make=BMW)
-  for (const f of equals) {
-    if (query[f] != null && query[f] !== "") filter[f] = query[f];
+// READ : GET /api/vehicles/:id
+router.get(
+  "/:id",
+  validate({ params: idParam }), // on vérifie que l'id est bien un ObjectId hex de 24 chars
+  ctrl.read
+);
+
+// CREATE : POST /api/vehicles
+router.post(
+  "/",
+  validate({ body: createVehicle }), // on exige les champs requis (make, model, year, price, ...)
+  ctrl.create
+);
+
+// UPDATE : PATCH /api/vehicles/:id
+router.patch(
+  "/:id",
+  validate({ params: idParam, body: updateVehicle }), // body partiel autorisé, patch safe côté contrôleur
+  ctrl.update
+);
+
+// DELETE : DELETE /api/vehicles/:id
+router.delete(
+  "/:id",
+  validate({ params: idParam }),
+  ctrl.remove
+);
+
+export default router;
+
+/*
+Brancher dans server.js :
+  import vehiclesRoutes from "./routes/vehicles.routes.js";
+  app.use("/api/vehicles", vehiclesRoutes);
+
+Rappel :
+- La sécurité “utile” est déjà couverte : requireAuth + validate/sanitize + contrôleur avec buildSafePatch.
+- Les schémas (validators/vehicles.validator.js) définissent ce qui est accepté pour chaque endpoint.
+*/
+
+
+// validators/vehicles.validator.js
+// But : schémas Joi pour Vehicle (list/create/update/id).
+// On importe Joi depuis ton middleware pour garder les mêmes options par défaut.
+import { Joi } from "../middlewares/validate.js";
+
+// Petites listes fermées (anti fautes + tri propre côté backoffice)
+export const VEHICLE_STATUS = ["draft", "available", "sold"];
+export const FUEL_TYPES = ["essence", "diesel", "hybrid", "electric"];
+export const TRANSMISSIONS = ["manual", "auto"];
+export const SORTABLE_FIELDS = ["createdAt", "price", "year", "mileage"];
+
+// Utiles pour les plages min/max
+const currentYear = new Date().getFullYear();
+const posInt = Joi.number().integer().min(1);
+
+// Schéma “plage” générique : { min?, max? } avec min <= max si les deux sont là
+const range = Joi.object({
+  min: Joi.number(),
+  max: Joi.number(),
+}).custom((v, helpers) => {
+  if (typeof v.min === "number" && typeof v.max === "number" && v.min > v.max) {
+    return helpers.error("any.invalid");
   }
+  return v;
+}, "min/max sanity");
 
-  // 2) Filtres "plage" min/max (ex: price[min]=10000)
-  for (const f of ranges) {
-    const range = readRange(query, f);
-    if (range) filter[f] = range;
-  }
+// 1) LISTE — filtre + tri + pagination (backoffice)
+export const listVehicles = Joi.object({
+  // égalités simples (filtrage)
+  make: Joi.string().trim(),
+  model: Joi.string().trim(),
+  status: Joi.string().valid(...VEHICLE_STATUS),
+  fuel: Joi.string().valid(...FUEL_TYPES),
+  transmission: Joi.string().valid(...TRANSMISSIONS),
+  color: Joi.string().trim(),
 
+  // plages min/max (2 syntaxes supportées : objet OU bracket keys)
+  price: range,
+  year: range,
+  mileage: range,
+  "price[min]": Joi.number().min(0),
+  "price[max]": Joi.number().min(0),
+  "year[min]": Joi.number().min(1900),
+  "year[max]": Joi.number().max(currentYear + 1),
+  "mileage[min]": Joi.number().min(0),
+  "mileage[max]": Joi.number().min(0),
 
-  // 4) Tri (whitelist) + ordre
-  const sortBy = allowedSort.has(String(query.sortBy)) ? String(query.sortBy) : "createdAt";
-  const order = String(query.order || "desc").toLowerCase() === "asc" ? 1 : -1;
-  const sort = { [sortBy]: order };
+  // recherche texte simple (ex: q=BMW)
+  q: Joi.string().trim().max(60),
 
-  return { filter, sort, sortBy, order };
-}
+  // tri whiteliste + ordre
+  sortBy: Joi.string().valid(...SORTABLE_FIELDS).default("createdAt"),
+  order: Joi.string().valid("asc", "desc").default("desc"),
 
-// utils/pagination.js
-// Objectif : calculer { page, limit, skip } depuis req.query et fabriquer un meta standard.
-// Traduction humaine : on borne la taille, on calcule l’offset, et on renvoie un petit résumé.
+  // pagination bornée
+  page: posInt.default(1),
+  limit: posInt.max(100).default(20),
+});
 
-const toPosInt = (v, fallback) => {
-  const n = Number(v);
-  return Number.isInteger(n) && n > 0 ? n : fallback;
-};
+// 2) CREATE — champs requis minimaux pour ajouter une voiture
+export const createVehicle = Joi.object({
+  vin: Joi.string().trim().max(64),
+  plate: Joi.string().trim().uppercase().max(32),
 
-export function getPagination(query = {},{ defaultLimit = 20, maxLimit = 100, defaultPage = 1 } = {}) 
+  make: Joi.string().trim().required(),
+  model: Joi.string().trim().required(),
+  trim: Joi.string().trim().allow(""),
 
-  {
-  const page = toPosInt(query.page, defaultPage);
-  const rawLimit = toPosInt(query.limit, defaultLimit);
-  const limit = Math.min(maxLimit, rawLimit);
-  const skip = (page - 1) * limit;
-  return { page, limit, skip };
-}
+  year: Joi.number().integer().min(1900).max(currentYear + 1).required(),
+  mileage: Joi.number().integer().min(0).default(0),
+  color: Joi.string().trim().allow(""),
 
-// Petit helper pour retourner un “meta” uniforme dans la réponse de liste
-export function buildMeta({ total, page, limit, sortBy, order }) {
-  const pages = Math.max(1, Math.ceil((total || 0) / (limit || 1)));
-  const hasNext = page < pages;
-  const hasPrev = page > 1;
-  return { page, limit, total, pages, hasNext, hasPrev, sortBy, order };
-} 
+  fuel: Joi.string().valid(...FUEL_TYPES),
+  transmission: Joi.string().valid(...TRANSMISSIONS),
 
-export default { getPagination, buildMeta };
+  price: Joi.number().min(0).required(),
+  currency: Joi.string().trim().uppercase().length(3).default("EUR"),
+  status: Joi.string().valid(...VEHICLE_STATUS).default("draft"),
+
+  description: Joi.string().trim().max(5000).allow(""),
+  images: Joi.array().items(Joi.string().trim()).default([]),
+  options: Joi.array().items(Joi.string().trim()).default([]),
+});
+
+// 3) UPDATE — tout optionnel (PATCH partiel), SANS defaults (pour ne pas forcer de champs)
+export const updateVehicle = Joi.object({
+  vin: Joi.string().trim().max(64),
+  plate: Joi.string().trim().uppercase().max(32),
+
+  make: Joi.string().trim(),
+  model: Joi.string().trim(),
+  trim: Joi.string().trim(),
+
+  year: Joi.number().integer().min(1900).max(currentYear + 1),
+  mileage: Joi.number().integer().min(0),
+  color: Joi.string().trim(),
+
+  fuel: Joi.string().valid(...FUEL_TYPES),
+  transmission: Joi.string().valid(...TRANSMISSIONS),
+
+  price: Joi.number().min(0),
+  currency: Joi.string().trim().uppercase().length(3),
+  status: Joi.string().valid(...VEHICLE_STATUS),
+
+  description: Joi.string().trim().max(5000),
+  images: Joi.array().items(Joi.string().trim()),
+  options: Joi.array().items(Joi.string().trim()),
+}).min(1); // Traduction : il faut au moins 1 champ à mettre à jour
+
+// 4) PARAM : vérifie un id Mongo
+export const idParam = Joi.object({
+  id: Joi.string().hex().length(24).required(),
+});
