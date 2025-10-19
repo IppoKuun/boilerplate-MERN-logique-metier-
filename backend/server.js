@@ -6,7 +6,7 @@ import helmet from "helmet"
 import config from "./env.js"
 import session from "express-session"
 import MongoStore from "connect-mongo"
-
+import product.route 
 //Connect a Mongo//
 async function connectMongo(){
 const Url = config.MONGO.Url
@@ -24,6 +24,8 @@ const Url = config.MONGO.Url
     console.warn("[db] Mongo disconnected");
   });
 }
+
+app.use("/api/product", product.routes)
 
 const app = express();
 app.use(express.json({ limit: "1mb" }));

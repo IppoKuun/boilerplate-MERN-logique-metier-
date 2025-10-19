@@ -1,7 +1,6 @@
-import Basejoi from "joi"
-import sanitze from sanitizeFilter.js
+import Joi from "joi"
+import sanitizeObject from "../utils/sanitize"
 
-export const Joi = Basejoi
 
 const DEFAULT_JOI = Object.freeze({
     convert:true,
@@ -19,35 +18,39 @@ function formatJoiError (err)  {
     }))
 }
 
-function validate( schemaMap = {}, options = {}) {
-    const reqPart = ["body", "params", "headers", "query"].filter(p => p.reqPart)
-
-     function noValidation(req, res, next){
-        if (reqPart.length === 0) return next()
+export default function Validate( schemaMap = {}, options = {}) {
+    const parts = ["body", "params", "headers", "query"].filter(p => schemaMap[p])
+    
+    if (parts.length === 0) {
+        return function noopValidate(_req, _res, next) {
+        return next();
+        };
     }
 
-    function validateMiddleware() {
-        for (const part of reqPart){
+    function validateMiddleware(req, res, next) {
+        for (const part of parts){
             const schema = schemaMap[part]
 
-            const input = req[part] ?? {}
-            if (!part === "headers"){
-                input = sanitze(input)
+            let input = req[part] ?? {}
+            if (part !== "headers"){
+                input = sanitizeObject(input)
             }
 
             const JoiOPTS = (part === "headers")? 
                 {...DEFAULT_JOI, allowUnknow :true }: {DEFAULT_JOI}
-            }
 
         const { error, value } = schema.validate(input, JoiOPTS);
         if (error){
-            return  res.status(400).json({
+            return res.status(400).json({
                 err: "Validation err",
                 where: part,
                 details: formatJoiError(error)
             })
         }
-        req[part] = value
-        }
-                   return next()
+    req[part] = value
     }
+    return next()
+    }
+}
+
+    

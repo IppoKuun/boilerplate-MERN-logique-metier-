@@ -1,5 +1,5 @@
 
-function requireAuth (roles = null){
+export default function requireAuth (roles = null){
     
     user = req.session.user
     if(!user){return res.status(401).json({ error: "Veuillez vous connectez"})}
