@@ -51,10 +51,17 @@ async function postProduct(req, res){
   return res.status(200).json({updProduct})
 }
 
+async function getProductBySlug(req, res) {
+  const doc = await Product.findOne({ slug: req.params.slug });
+  if (!doc) return res.status(404).json({ message: "Produit non trouvé" });
+  return res.status(200).json(doc);
+}
+
 export {
   updateProduct,
   deleteProduct,
   postProduct,
   getProduct,
-  list
+  list,
+  getProductBySlug
 }

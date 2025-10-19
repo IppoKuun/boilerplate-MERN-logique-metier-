@@ -1,7 +1,7 @@
 import config from "../../env.js"
 
 
-export default function logout (req, res, next) {
+export default async function logout (req, res, next) {
     const sessName = config?.session?.name || "sid"
     const cookie = config?.cookie?.name || {}
 

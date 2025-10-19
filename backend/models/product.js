@@ -1,67 +1,36 @@
 const mongoose = require('mongoose');
+const slugify = require('slugify');               
 
 const productSchema = new mongoose.Schema({
-    nom: {
-        required : true,
-        type: String,
-        trim: true,
-        lowercase:true,
-    },
-    description : {
-        required : true,
-        type:String,
-    },
+  nom: { required: true, type: String, trim: true, lowercase: true },
+  description: { required: true, type: String },
+  shortDesc: { required: true, type: String },
+  price: { required: true, type: Number },
+  category: { required: true, type: String, lowercase: true },
+  images: { type: [String] },
+  isActive: { type: Boolean, required: true },
 
-    shortDesc : {
-        required : true,
-        type:String,
-    },
-    slug: { type: String, required: true, unique: true, lowercase: true, trim: true },
+  slug: { type: String, required: true, unique: true, index: true, trim: true, lowercase: true },
+}, { timestamps: true });
 
+    productSchema.pre('validate', async function (next) {
+    if (!this.slug && this.nom) {
+        const base = slugify(this.nom, { lower: true, strict: true, locale: 'fr' });
+        let candidate = base;
+        let i = 2;
 
-    price : {
-        type:Number,
-        required:true
-    },
-    category: {
-        type: [String],
-        enum: [
-        "electronics",
-        "fashion",
-        "home",
-        "beauty",
-        "sports",
-        "toys",
-        "automotive",
-        "books",
-        "groceries",
-        "health",
-        "office",
-        "garden",
-        "music",
-        "video_games"
-        ], required: true
-    },
-
-    images: {
-        type: [String],
-    },
-    
-    isActive:{
-        type:Boolean,
-        required:true
-    },
-
-    updatedAt:{
-        type:timestamps,
-    },
-    createdAt:{
-        type:timestamps,
+        const Model = this.constructor; 
+        while (await Model.exists({ slug: candidate })) {
+        candidate = `${base}-${i++}`; 
+        }
+        this.slug = candidate;
     }
-}, {timestamps: true})
+    next();
+    });
 
-productSchema.index({nom : 1})
-productSchema.index({price : 1})
-productSchema.index({category : 1})
 
-const Product = mongoose.model("Product", productSchema)
+productSchema.index({ nom: 1 });
+productSchema.index({ price: 1 });
+productSchema.index({ category: 1 });
+
+module.exports = mongoose.model('Product', productSchema);

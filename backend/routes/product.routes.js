@@ -12,6 +12,8 @@ router.get("/", validate({query : productQuery}), productControllers.list)
 
 router.get("/:id", validate({params : idParam}), productControllers.getProduct)
 
+router.get("/slug/:slug", productControllers.getProductBySlug);
+
 router.post("/", validate({body: productBase}), requireAuth(["owner", "admin"]),  productControllers.postProduct)
 
 router.patch("/:id", validate({ body: updateVehicleBody }) ,requireAuth(["owner", "admin"]) ,productControllers.updateProduct )
