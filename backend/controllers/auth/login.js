@@ -1,7 +1,7 @@
 import config from "../../env.js"
 import User from "../../models/User.js"
 
-export default function login (req, res, next){
+export default async function login (req, res, next){
     const AUTH_ERR = {err: "Erreur d'authentification"}
     const {username, password} = req.body
 
@@ -17,7 +17,7 @@ export default function login (req, res, next){
 
     await new Promise((resolve, reject) => (
     req.session.regenerate(err => err ? reject(err) : resolve())))
-    }
+    
     
 
     req.session.user = ({

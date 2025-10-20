@@ -6,17 +6,18 @@ import productValidator from "../middlewares/product.validator";
 
 const { productQuery, productBase, updateVehicleBody, idParam } = productValidator
 
-const router = Router()
+const userRouter = Router()
 
-router.get("/", validate({query : productQuery}), productControllers.list)
+userRouter.get("/", validate({query : productQuery}), productControllers.list)
 
-router.get("/:id", validate({params : idParam}), productControllers.getProduct)
+userRouter.get("/:id", validate({params : idParam}), productControllers.getProduct)
 
-router.get("/slug/:slug", productControllers.getProductBySlug);
+userRouter.get("/slug/:slug", productControllers.getProductBySlug);
 
-router.post("/", validate({body: productBase}), requireAuth(["owner", "admin"]),  productControllers.postProduct)
+userRouter.post("/", validate({body: productBase}), requireAuth(["owner", "admin"]),  productControllers.postProduct)
 
-router.patch("/:id", validate({ body: updateVehicleBody }) ,requireAuth(["owner", "admin"]) ,productControllers.updateProduct )
+userRouter.patch("/:id", validate({ body: updateVehicleBody }) ,requireAuth(["owner", "admin"]) ,productControllers.updateProduct )
 
-router.delete("/:id", validate({params: idParam }), requireAuth(["owner", "admin"]),  productControllers.deleteProduct)
+userRouter.delete("/:id", validate({params: idParam }), requireAuth(["owner", "admin"]),  productControllers.deleteProduct)
 
+module.exports = userRouter

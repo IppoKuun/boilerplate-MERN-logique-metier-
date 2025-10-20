@@ -3,10 +3,12 @@ import login from "../controllers/auth/login";
 import logout from "../controllers/auth/logout";
 import {loginRateLimiter} from  "../middlewares/rateLimits";
 
-const Router = Router()
+const authRouter = Router()
 
-Router.post("/login", login, loginRateLimiter)
-Router.post("/logout", logout)
-Router.get("/me", requireAuth(), (res, req) => {
+authRouter.post("/login", login, loginRateLimiter)
+authRouter.post("/logout", logout)
+authRouter.get("/me", requireAuth(), (res, req) => {
     return res.status(200).json({user: req.user})
 })
+
+module.exports = authRouter

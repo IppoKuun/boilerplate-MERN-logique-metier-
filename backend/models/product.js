@@ -9,7 +9,6 @@ const productSchema = new mongoose.Schema({
   category: { required: true, type: String, lowercase: true },
   images: { type: [String] },
   isActive: { type: Boolean, required: true },
-
   slug: { type: String, required: true, unique: true, index: true, trim: true, lowercase: true },
 }, { timestamps: true });
 
