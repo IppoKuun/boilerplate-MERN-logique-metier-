@@ -4,7 +4,7 @@ const mongoose = mongoose()
 
 const AuditEventSchema = new Schema({
     ts : {type: Date, default : () => Date.now(), index:true,},
-    events : { type: String, required: true, index:true},
+    event : { type: String, required: true, index:true},
     target : {type : String, slug: String, id: String, },
     actor: { user:String, ip:String, role:String, id:String, ua : String}, 
     diff:  mongoose.Schema.Types.Mixed,

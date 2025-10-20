@@ -1,7 +1,9 @@
 import { queryBuilder } from "../utils/queryBuilder"
 import {pagination, buildMeta} from "../utils/pagination";
-import Product from "../models/product"
+import Product, { events, findByIdAndDelete } from "../models/product"
 import buildSafePatch from "../utils/sanitize";
+import audit from "../utils/audit"
+import AuditsEvents from "../models/AuditsEvents";
 
 
 export default async function list(req, res){
@@ -31,16 +33,39 @@ async function getProduct(req, res){
   return res.status(200).json(doc)
 }
 
-async function postProduct(req, res){
-  const newProduct = await Product.create(req.body)
-    return res.status(201).json({message: "Porduit ajoutez avec succées"})
-}
- async function deleteProduct(req, res){
+
+  async function postProduct(req, res){
+    const newProduct = await Product.create(req.body)
+    
+    if (!newProduct) {
+      return res.status(400).json({ message: "Création échouée" });
+    }
+        await audit(req, {
+          event : "product.create",
+          target :{
+            type : "produit",
+            id: String(newProduct._id),
+            slug: newProduct.slug,
+          } 
+        })
+      return res.status(201).json({message: "Produit ajoutez avec succées"})
+    }
+  
+
+async function deleteProduct(req, res){
   const id = req.params.id
   const dltProduct = await Product.findByIdAndDelete(id)
   if (!dltProduct){ return res.status(404).json({message: "Produit introuvable"})}
+          await audit(req, {
+          event : "product.deleted",
+          target :{
+            type : "produit",
+            id: String(dltProduct._id),
+            slug: dltProduct.slug,
+          }})
   return res.status(200).json({message : "Produit supp avec succès"})
 }
+
 
   async function  updateProduct(req, res){
   const id = req.params.id
@@ -48,6 +73,14 @@ async function postProduct(req, res){
     "shortDesc", "images", "isActive",]);
   const updProduct = await Product.findByIdAndUpdate(id, allowedPart, {new:true})
     if (!updProduct){ return res.status(404).json({message: "Produit introuvable"})}
+     await audit(req, {
+      event: "product.update",
+      target:{
+        type: "produit",
+        id: String(updateProduct),
+        slug: updProduct.slug
+      }
+     })
   return res.status(200).json({updProduct})
 }
 

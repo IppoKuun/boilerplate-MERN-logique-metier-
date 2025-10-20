@@ -1,6 +1,6 @@
 import AuditsEvents from "../models/AuditsEvents"
 
-export default async function audit(req, playload){
+export default async function audit(req, payload){
     const base = {
         ts : Date.now(),
         actor: {
@@ -11,7 +11,7 @@ export default async function audit(req, playload){
         ua:  req.headers["user-agent"] || "unknown",
         },
         correlationId: req.id || req.headers["x-request-id"] || null,
-    } = {...playload}
+    } = {...payload}
 
     try{
         AuditsEvents.create(base)

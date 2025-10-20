@@ -15,7 +15,7 @@ auditRouter.get("/",   async(req, res) => {
             const {page, limit, skip} =  pagination(req.query, { defaultLimit: 50, maxLimit: 200 });
 
             const [items, total] = await Promise.all([
-            AuditsEvents.filter(filter).sort(sort).limit(limit).lean(),
+            AuditsEvents.filter(filter).sort(sort).skip(skip).limit(limit).lean(),
             AuditsEvents.countDocuments(filter)
         ])
           res.json({ items, meta: buildMeta({ page, limit, total, sortBy, order }) });
