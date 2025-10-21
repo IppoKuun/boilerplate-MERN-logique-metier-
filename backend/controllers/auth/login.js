@@ -9,7 +9,7 @@ export default async function login (req, res, next){
     const user = await User.findOne({ username })
     .select("+username +passwordHash +isActive +role +displayName")
     if (!user || user.status ==="suspendu"){
-        return res.status(400).json(err(AUTH_ERR))
+        return res.status(400).json(error(AUTH_ERR))
     }
 
     const ok = await user.checkPassword(password)

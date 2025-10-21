@@ -5,9 +5,9 @@ import {loginRateLimiter} from  "../middlewares/rateLimits";
 
 const authRouter = Router()
 
-authRouter.post("/login", login, loginRateLimiter)
+authRouter.post("/login", loginRateLimiter, login )
 authRouter.post("/logout", logout)
-authRouter.get("/me", requireAuth(), (res, req) => {
+authRouter.get("/me", requireAuth(), (req, res) => {
     return res.status(200).json({user: req.user})
 })
 

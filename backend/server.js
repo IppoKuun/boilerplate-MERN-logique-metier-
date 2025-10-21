@@ -6,9 +6,9 @@ import helmet from "helmet"
 import config from "./env.js"
 import session from "express-session"
 import MongoStore from "connect-mongo"
-import 
+import auditRouter from "./routes/auditRoutes.js"
+import productRouter from "./routes/product.routes.js"
 
-//Connect a Mongo//
 async function connectMongo(){
 const Url = config.MONGO.Url
     await mongoose.connect(Url, {
@@ -25,11 +25,11 @@ const Url = config.MONGO.Url
     console.warn("[db] Mongo disconnected");
   });
 }
+const app = express()
 
-app.use("/api/product", product.routes)
-app.use("/api/audits", auditRoutes)
+app.use("/api/product", productRouter)
+app.use("/api/audits", auditRouter)
 
-const app = express();
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 app.use(helmet({ contentSecurityPolicy: false }));

@@ -1,13 +1,23 @@
-import { mongoose, version } from "mongoose"
+import mongoose from "mongoose"
 
-const mongoose = mongoose()
+const { Schema } = mongoose
 
 const AuditEventSchema = new Schema({
     ts : {type: Date, default : () => Date.now(), index:true,},
     event : { type: String, required: true, index:true},
-    target : {type : String, slug: String, id: String, },
-    actor: { user:String, ip:String, role:String, id:String, ua : String}, 
-    diff:  mongoose.Schema.Types.Mixed,
+    target : {
+        type: String,
+        slug: String,
+        id:String
+    },
+    actor: { 
+        user:String, 
+        ip:String, 
+        role:String, 
+        id:String, 
+        ua : String
+    }, 
+    diff:  Schema.Types.Mixed,
     CorrelationId: String,
 }, {versionKey : false} )
 

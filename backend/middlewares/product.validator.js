@@ -39,7 +39,7 @@ const ranges = Joi.object({ min: Joi.number(), max: Joi.number() })
 
   images: Joi.array().items(Joi.string().uri()),
   })
-  export const updateVehicleBody = productBase.min(1).unknown(false);
+  export const updateProductBody = productBase.min(1).unknown(false);
   
   export const idParam = Joi.object({
     id: Joi.string().length(24).hex().required(),
@@ -50,6 +50,6 @@ export default {
     allowedCat,
     productBase,
     PRODUCT_SORTABLE_FIELDS,
-    updateVehicleBody,
+    updateProductBody,
     idParam,
 }

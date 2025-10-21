@@ -1,9 +1,8 @@
 import { queryBuilder } from "../utils/queryBuilder"
 import {pagination, buildMeta} from "../utils/pagination";
-import Product, { events, findByIdAndDelete } from "../models/product"
+import Product from "../models/product"
 import buildSafePatch from "../utils/sanitize";
 import audit from "../utils/audit"
-import AuditsEvents from "../models/AuditsEvents";
 
 
 export default async function list(req, res){

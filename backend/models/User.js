@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { hashPassword, verifyPassword } from "../hash";
+import { hashPassword, verifyPassword } from "../utils/hash.js";
 
 // On créer notre schema//
 const { Schema } = mongoose
@@ -60,7 +60,7 @@ userSchema.method.setPassword = async function (plain){
 //Renvoie ce que l'user as tapé si le plain et hash bien la meme chose.//
 userSchema.method.checkPassword = async function (plain){
     if(!this.passwordHash)
-        throw error ("IL NYA PAS DE MDP HASHE ")
+        throw new Error ("IL NYA PAS DE MDP HASHE ")
     return verifyPassword(plain, this.passwordHash)
 }
 

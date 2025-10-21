@@ -11,7 +11,8 @@ export default async function audit(req, payload){
         ua:  req.headers["user-agent"] || "unknown",
         },
         correlationId: req.id || req.headers["x-request-id"] || null,
-    } = {...payload}
+        ...payload
+    } 
 
     try{
         AuditsEvents.create(base)
