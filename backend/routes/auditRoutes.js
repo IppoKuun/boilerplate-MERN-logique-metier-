@@ -3,7 +3,7 @@ import AuditsEvents from "../models/AuditsEvents";
 import {pagination, buildMeta} from "../utils/pagination"
 import queryBuilder from "../utils/queryBuilder"
 
-const auditRouter = Router()
+export const auditRouter = Router()
 
 
 auditRouter.get("/",   async(req, res) => {
@@ -22,4 +22,3 @@ auditRouter.get("/",   async(req, res) => {
     })
 
 
-module.exports = auditRouter

@@ -32,4 +32,4 @@ productSchema.index({ nom: 1 });
 productSchema.index({ price: 1 });
 productSchema.index({ category: 1 });
 
-module.exports = mongoose.model('Product', productSchema);
+export default mongoose.model('Product', productSchema);

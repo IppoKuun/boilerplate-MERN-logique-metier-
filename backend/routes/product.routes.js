@@ -6,7 +6,7 @@ import productValidator from "../middlewares/product.validator";
 
 const { productQuery, productBase, updateVehicleBody, idParam } = productValidator
 
-const productRouter = Router()
+export const productRouter = Router()
 
 productRouter.get("/", validate({query : productQuery}), productControllers.list)
 
@@ -19,5 +19,3 @@ productRouter.post("/", validate({body: productBase}), requireAuth(["owner", "ad
 productRouter.patch("/:id", validate({ body: updateVehicleBody }) ,requireAuth(["owner", "admin"]) ,productControllers.updateProduct )
 
 productRouter.delete("/:id", validate({params: idParam }), requireAuth(["owner", "admin"]),  productControllers.deleteProduct)
-
-module.exports = productRouter
