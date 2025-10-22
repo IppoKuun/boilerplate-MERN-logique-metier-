@@ -1,82 +1,79 @@
-// models/AuditEvent.js (ESM)
-import mongoose from "mongoose";
+// src/lib/api.js
+import axios from 'axios';
 
-const AuditEventSchema = new mongoose.Schema({
-  ts:   { type: Date, default: () => new Date(), index: true },
-  event:{ type: String, required: true, index: true },     // ex: "product.update"
-  actor:{                                                   // QUI
-    id: String, role: String, },
-  target:{ type: { type: String }, id: String, slug: String }, // QUOI
-  source:{ via: String, ip: String, ua: String },           // UI/API/JOB + IP/UA
-  reason: String,
-  diff: mongoose.Schema.Types.Mixed,
-  correlationId: String
-}, { versionKey: false });
+// 1) Base URL publique (visible côté client)
+const baseURL =
+  (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/$/, '');
 
-AuditEventSchema.index({ "target.id": 1, ts: -1 });
-AuditEventSchema.index({ "actor.id": 1, ts: -1 });
-// Option rétention auto (à valider avec le client)
-// AuditEventSchema.index({ ts: 1 }, { expireAfterSeconds: 60*60*24*90 });
-
-export default mongoose.model("AuditEvent", AuditEventSchema, "audit_events");
-
-
-// utils/audit.js
-import AuditEvent from "../models/AuditEvent.js";
-
-export async function audit(req, payload) {
-  const base = {
-    ts: new Date(),
-    actor: {
-      id:   req.user?.id || req.user?.username || req.session?.user?.username || "anonymous",
-      role: req.user?.role || req.session?.user?.role || "unknown",
-    },
-    source: {
-      via: req.apiKey ? "api" : "ui",
-      ip:  req.ip,
-      ua:  req.headers["user-agent"] || "unknown",
-    },
-    correlationId: req.id || req.headers["x-request-id"] || null,
-    ...payload,
-  };
-
-  try {
-    await AuditEvent.create(base);   // ⬅️ écrit en base
-  } catch (e) {
-    // fallback console si la base refuse (pour ne rien perdre en dev)
-    console.log("[audit-fallback]", JSON.stringify(base));
-  }
-}
-
-
-// routes/admin.audit.routes.js
-import { Router } from "express";
-import requireAuth from "../middlewares/requireAuth.js";
-import AuditEvent from "../models/AuditEvent.js";
-import { queryBuilder } from "../utils/queryBuilder.js";
-import { pagination, buildMeta } from "../utils/pagination.js";
-
-const r = Router();
-
-r.get("/audit", requireAuth(["owner","superadmin"]), async (req, res) => {
-  // Filtrage/tri (prévois "ts" en range)
-  const { filter, sort, sortBy, order } = queryBuilder(req.query, {
-    equals: new Set(["event", "actor.id", "target.id"]),
-    ranges: new Set(["ts"]),
-    allowedSort: new Set(["ts"]),
-  });
-
-  const { page, limit, skip } = pagination(req.query, { defaultLimit: 50, maxLimit: 200 });
-
-  const [items, total] = await Promise.all([
-    AuditEvent.find(filter).sort(sort).skip(skip).limit(limit).lean(),
-    AuditEvent.countDocuments(filter),
-  ]);
-
-  res.json({ items, meta: buildMeta({ page, limit, total, sortBy, order }) });
+// 2) Instance Axios réutilisable
+export const api = axios.create({
+  baseURL,
+  withCredentials: true, // <- cookies envoyés automatiquement si le backend en met
+  timeout: 10000
 });
 
-export default r;
+/**
+ * -------------------------------------------
+ * INTERCEPTEUR DE REQUÊTE
+ * -------------------------------------------
+ * Signature: (config) => config
+ * - S'exécute AVANT que la requête parte sur le réseau
+ * - 'config' contient: url, method, headers, data, params, etc.
+ */
+api.interceptors.request.use((config) => {
+  // 3) S'assurer que l'objet headers existe
+  config.headers = config.headers || {};
 
+  // 4) Poser un Content-Type JSON *uniquement* si on envoie un objet
+  //    et qu'on n'envoie pas déjà un FormData
+  const isFormData = typeof FormData !== 'undefined' && (config.data instanceof FormData);
+  if (config.data && !isFormData && !config.headers['Content-Type']) {
+    config.headers['Content-Type'] = 'application/json';
+  }
 
-// + OUBLIE PAS DE MODIFIE CONTROLLEUR ET SERVEUR. JS//
+  // 5) Ici PAS de Bearer: tu n'as pas de token => rien à ajouter.
+  //    Les cookies (si withCredentials=true) sont gérés par le navigateur.
+
+  return config; // IMPORTANT: on renvoie la config (sinon la requête est bloquée)
+});
+
+/**
+ * -------------------------------------------
+ * INTERCEPTEUR DE RÉPONSE
+ * -------------------------------------------
+ * Signature (succès):    (response) => response
+ * Signature (erreur):    (error)    => Promise.reject(error)
+ * - S'exécute APRÈS réception de la réponse HTTP
+ * - Permet de standardiser ce que renvoie l'API à l'app
+ */
+api.interceptors.response.use(
+  // 6) Cas succès -> on renvoie directement les 'data' (payload utile)
+  (res) => res.data,
+
+  // 7) Cas erreur -> on normalise l'erreur
+  (err) => {
+    const r = err.response; // peut être undefined si coupure réseau/CORS
+    const message =
+      r?.data?.message || r?.data?.error || err.message || 'Network error';
+
+    if (process.env.NODE_ENV === 'development') {
+      // eslint-disable-next-line no-console
+      console.error('[API]', r?.status, message, r?.data);
+    }
+
+    // 8) On rejette avec un objet propre et prévisible
+    return Promise.reject({
+      message,            // message lisible
+      status: r?.status,  // code HTTP (ex: 400, 401, 500) si dispo
+      data: r?.data       // payload d'erreur brut du backend si utile
+    });
+  }
+);
+
+// 9) Helpers simples (facultatifs)
+const get = (url, config) => api.get(url, config);
+const post = (url, data, config) => api.post(url, data, config);
+const put = (url, data, config) => api.put(url, data, config);
+const del = (url, config) => api.delete(url, config);
+
+export default { get, post, put, delete: del, raw: api };
