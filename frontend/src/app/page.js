@@ -37,7 +37,7 @@ export default function Home() {
   })
 
   useEffect(()=> {
-    let compAlive = true,
+    let compAlive = true
     const controllers = new AbortController()
     setTimeout( async () => {
       try{
@@ -70,11 +70,78 @@ export default function Home() {
   }, [params])  
   const categories = useMemo(() => {getCategories(products)}, [products])
 
+  const resetFilter = () => {
+    setMinPrice(0)
+    setMaxPrice(50)
+    setCategory("Trié par défault")
+  }
+
   if (loading) return <main className="min-h-screen p-8">Chargement…</main>;
   if (err)   return <main className="min-h-screen p-8 text-red-600">Erreur : {err}</main>;
 
   return (
     <div>
+      <main className="">
+        <section className="">
+          <h1 className=""> Bienvenue sur NodeShop </h1>
+          <h2 className=""> Le shop moderne, simple et rapide</h2>
+          <p className="">NodeShop réunit le meilleur du minimalisme et du confort.</p>
+          <button 
+            onClick={()=> {document.getElementById('products').scrollIntoView({ behavior: 'smooth' });}}
+          className="">Découvrir nos produits</button>
+        </section>
+          <div className="">
+            <label className="">
+              <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}>
+              {categories.map((c) => {
+              <option key={c.id}>{c.nom} </option>
+            })}
+            </select>
+          </label>
+          <label className="">
+            <input
+            type="Number"
+            placeholder="Entez un chiffre"
+            value={minPrice}
+            onChange={(e) => setMinPrice(e.target.value)}
+            className=""
+            ></input>
+          </label>
+          <label className="">
+            <input
+              type="Number"
+              placeholder="Entez un chiffre"
+              value={maxPrice}
+              onChange={(e) => setMaxPrice(e.target.value)}
+              className=""
+            ></input>
+            </label> 
+
+            <label className="">
+              <span className="">Trier par :</span>
+              <select className="">
+                <option className="" value={"Default"}>Défault</option>
+                <option className="" value={"asc"}>Croissant</option>
+                <option className="" value={"desc"}>Décoissant</option>
+              </select>
+            </label>
+            <label className="">
+              <button
+              onClick={resetFilter}
+              className=""
+              > Reinitialisé les filtres </button>
+            </label>
+        </div>
+        <section id="products" className="">
+          <span className=""> Nos produits </span>
+          {products.map((e) => (
+            
+          ))}
+        </section>
+
+      </main>
 
     </div>
   );
