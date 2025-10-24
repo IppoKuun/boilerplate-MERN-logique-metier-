@@ -30,8 +30,10 @@ export default function Home() {
     if (maxPrice !== "") p["maxPrice"] = maxPrice;
     //A VOIR PLUS TARD//
     const m = mapSort(p)
-    if
+    if (m.sortBy) p.sortBy = m.sortBy
+    if (m.order) p.order = p.order
 
+    return p
   })
 
   useEffect(()=> {
@@ -44,17 +46,32 @@ export default function Home() {
 
         const res = await api.get("/products", {params, signal: controllers.signal })
 
-        const items= 
+        const safeItems = res?.data.map((i) => ({
+          id: i.id || i._id,
+          shortDesc: i.shortDesc,
+          slug : i.slug,
+          images: p.images?.[0],
+          category: i.category,
+          price: i.price,
+          nom: i.nom 
+        }))
+         if (compAlive) {setAllproducts(safeItems)}
+
+
       } catch(e){
-
+        if (compAlive){
+          setErr(" Appel d'API échoué")
+        }
       } finally {
-
+        setLoading(false)
       }
     }, 250)
-  }, [params])
-  
+    return () => { compAlive= false, controllers.abort(), setTimeout(t) }
+  }, [params])  
+  const categories = useMemo(() => {getCategories(products)}, [products])
 
-  const 
+  if (loading) return <main className="min-h-screen p-8">Chargement…</main>;
+  if (err)   return <main className="min-h-screen p-8 text-red-600">Erreur : {err}</main>;
 
   return (
     <div>
