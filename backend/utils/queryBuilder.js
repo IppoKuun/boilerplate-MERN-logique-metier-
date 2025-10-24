@@ -48,7 +48,6 @@ function setRanges(query, champ){
   
 
   const sortBy = allowedSort.has(String(req.query.sortBy)) ? req.query.sortBy : "createdAt"
-  const order = req.query.order.toLowerCase() === "asc" ? 1:-1
-  const sort = { [sortBy]: order }
+  const order = req.query.order?.toLowerCase() === "desc" ? -1 : 1 
   return {sort, sortBy, order }
 }
