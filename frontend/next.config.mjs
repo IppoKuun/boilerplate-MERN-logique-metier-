@@ -3,7 +3,7 @@
 const nextConfig = { reactStrictMode:true,
     images: {
         remotePatterns: [
-            {protocol: "https", hostname:"res.cloudinary.com", pathname:"", port:"5000" }
+            {protocol: "https", hostname:"res.cloudinary.com", pathname:"*.." }
         ]
     }
 }

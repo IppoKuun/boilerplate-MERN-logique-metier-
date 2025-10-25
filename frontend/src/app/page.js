@@ -1,3 +1,5 @@
+"use client"
+
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import api from "./lib/api";
@@ -28,7 +30,7 @@ export default function Home() {
     if (category && category !== "toutes") p.category = category;
     if (minPrice !== "") p["minPrice"] = minPrice;
     if (maxPrice !== "") p["maxPrice"] = maxPrice;
-    //A VOIR PLUS TARD//
+
     const m = mapSort(p)
     if (m.sortBy) p.sortBy = m.sortBy
     if (m.order) p.order = p.order
@@ -136,13 +138,25 @@ export default function Home() {
         </div>
         <section id="products" className="">
           <span className=""> Nos produits </span>
-          {products.map((e) => (
-            
+          {products.map((p) => (
+            <article key={p.id} className="">
+              <img src={p.products} alt={p.nom} ></img>
+              <div className="">
+                <span className=""> {p.price}</span>
+                <span className=""> {p.category} </span>
+                <span className=""> {p.nom}</span>
+                <span className=""> {p.shortDesc} </span>
+                <Link href={`/products/${p.slug}`}></Link>
+              </div>
+            </article>
           ))}
         </section>
-
+          {products.length === 0 &&(
+            <p className="">
+              Aucun produit disponible.
+            </p>
+          )}
       </main>
-
     </div>
   );
 }

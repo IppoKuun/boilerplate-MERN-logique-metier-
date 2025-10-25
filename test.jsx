@@ -1,207 +1,145 @@
-// src/app/page.js
-"use client";
+// BUT : Afficher le détail d’un produit en SSR via le proxy Next -> backend, sans TypeScript et en Tailwind minimal.
 
-import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import api from "@/lib/api";
+export const revalidate = 0; 
+// -> On force un rendu toujours frais (SSR "no-store"). Simple et sûr pour un petit projet.
 
-// Utilitaire d'extraction des catégories depuis ce qu'on a déjà (simple, local)
-const getCategories = (products) => {
-  const s = new Set(products.map(p => p.category).filter(Boolean));
-  return ["toutes", ...Array.from(s)];
-};
+async function getProduct(id) {
+  // Appel du backend via le proxy Next. Public : pas besoin d’envoyer des cookies.
+  const res = await fetch(`/api/proxy/products/${id}`, {
+    method: 'GET',
+    // "no-store" côté fetch pour éviter tout cache ; doublon avec revalidate=0 mais explicite.
+    cache: 'no-store',
+    // On peut ajouter des headers si ton backend les attend (ici, rien de spécial).
+  });
 
-// Map “tri” UI → paramètres API (selon ton queryBuilder backend)
-const mapSort = (s) => {
-  switch (s) {
-    case "prix-asc":  return { sortBy: "price", order: "asc" };
-    case "prix-desc": return { sortBy: "price", order: "desc" };
-    case "recent": return { sortBy: "createdAt", order: "desc" };
-    default:          return {};
+  if (res.status === 404) {
+    // Next.js : déclenche la page not-found.js du segment courant
+    // (c’est plus propre que de rendre un "Produit introuvable" en plein milieu).
+    // On évite aussi les erreurs côté UI.
+    const { notFound } = await import('next/navigation');
+    return notFound();
   }
-};
 
-export default function PublicPage() {
-  // États UI (visuels)
-  const [category, setCategory] = useState("toutes");
-  const [minPrice, setMinPrice] = useState("");
-  const [maxPrice, setMaxPrice] = useState("");
-  const [sortBy, setSortBy] = useState("pertinence"); // = laisser l’ordre backend (récent d’abord)
+  if (!res.ok) {
+    // Pour tout autre code d’erreur (500, 400…), on renvoie une erreur claire.
+    throw new Error(`Échec du chargement du produit (HTTP ${res.status})`);
+  }
 
-  // Données & statut
-  const [products, setProducts] = useState([]);  
-  const [loading,  setLoading]  = useState(true);
-  const [error,    setError]    = useState(null);
+  const data = await res.json();
+  return data?.data || data; 
+  // Selon ton backend : parfois { data: {...} }, parfois l’objet direct.
+}
 
-  // Construit les query params pour l’API (n’envoie pas les vides)
-  const params = useMemo(() => {
-    const p = {};
-    if (category && category !== "toutes") p.category = category;
-    if (minPrice !== "") p["price[min]"] = Number(minPrice);
-    if (maxPrice !== "") p["price[max]"] = Number(maxPrice);
+function formatPrice(price, currency = 'EUR', locale = 'fr-FR') {
+  // Petit helper : affichage propre des prix (ex: 19,90 €)
+  try {
+    return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(price ?? 0);
+  } catch {
+    return `${price ?? 0} ${currency}`;
+  }
+}
 
-    const m = mapSort(sortBy);
-    if (m.sortBy) p.sortBy = m.sortBy;
-    if (m.order)  p.order  = m.order;
+export default async function ProductPage({ params }) {
+  // Next te passe les segments dynamiques dans "params".
+  const { id } = params;
 
-    return p;
-  }, [category, minPrice, maxPrice, sortBy]);
+  // 1) Charger les données
+  const product = await getProduct(id);
 
-  // Appel API (debouncé) dès que les filtres changent
-  useEffect(() => {
-    let alive = true;
-    const controller = new AbortController();
-    const t = setTimeout(async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  // 2) "Resilient rendering" : on évite le crash si un champ est manquant.
+  const {
+    title = 'Produit',
+    description = '',
+    price = 0,
+    currency = 'EUR',
+    category = 'Divers',
+    stock = 0,
+    sku = '',
+    images = [],
+    thumbnail = '',
+  } = product || {};
 
-        const res = await api.get("/products", { params, signal: controller.signal });
-
-        const items =
-          Array.isArray(res?.data) ? res.data :
-          Array.isArray(res?.data?.data) ? res.data.data :
-          Array.isArray(res?.data?.items) ? res.data.items :
-          [];
-
-        const normalized = items.map(p => ({
-          id: p.id || p._id,
-          name: p.name || p.nom || p.title || "Sans nom",
-          price: Number(p.price ?? 0),
-          category: p.category || p.type || "autre",
-          image: (p.images && p.images[0]) || p.image || p.imageUrl || "/placeholder.png",
-          createdAt: p.createdAt || p.created_at || null,
-        }));
-
-        if (alive) setProducts(normalized);
-      } catch (e) {
-        if (alive) setError(ece?.message || "Erreur de chargement");
-      } finally {
-        if (alive) setLoading(false);
-      }
-    }, 250); // petit debounce
-
-    return () => { alive = false; controller.abort(); clearTimeout(t); };
-  }, [params]);
-
-  const categories = useMemo(() => getCategories(products), [products]);
-
-  // ————————————————————— Rendu
-  if (loading) return <main className="min-h-screen p-8">Chargement…</main>;
-  if (error)   return <main className="min-h-screen p-8 text-red-600">Erreur : {error}</main>;
+  const imageToShow = thumbnail || images?.[0] || '';
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      {/* Lien admin en haut-droite */}
-      <div className="border-b border-gray-200 bg-white">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-12 flex items-center justify-end">
-          <Link href="/login" className="text-sm font-medium text-indigo-700 hover:text-indigo-900 underline underline-offset-2">
-            → Cliquez ici pour visualiser le backoffice admin
-          </Link>
+    <main className="mx-auto max-w-5xl px-4 py-8">
+      {/* Fil d’ariane minimal (UX) */}
+      <nav className="text-sm text-gray-500 mb-4">
+        <a href="/" className="hover:underline">Accueil</a>
+        <span className="mx-2">/</span>
+        <a href="/#catalog" className="hover:underline">Produits</a>
+        <span className="mx-2">/</span>
+        <span className="text-gray-700">{title}</span>
+      </nav>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Image principale */}
+        <div className="border rounded-xl p-4">
+          {imageToShow ? (
+            // Pour éviter la config next/image (domains) au début, on reste sur <img>.
+            <img
+              src={imageToShow}
+              alt={title}
+              className="w-full h-auto rounded-lg object-cover"
+            />
+          ) : (
+            <div className="aspect-[4/3] w-full bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
+              Pas d’image
+            </div>
+          )}
         </div>
+
+        {/* Infos produit */}
+        <section>
+          <h1 className="text-2xl font-semibold mb-2">{title}</h1>
+
+          <div className="flex items-center gap-3 text-sm text-gray-600 mb-4">
+            <span className="inline-block bg-gray-100 rounded px-2 py-1">{category}</span>
+            {sku && <span className="inline-block bg-gray-100 rounded px-2 py-1">SKU: {sku}</span>}
+            <span className={`inline-block rounded px-2 py-1 ${stock > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+              {stock > 0 ? 'En stock' : 'Rupture'}
+            </span>
+          </div>
+
+          <p className="text-3xl font-bold mb-4">
+            {formatPrice(price, currency)}
+          </p>
+
+          <p className="text-gray-700 leading-relaxed mb-6">
+            {description || 'Aucune description fournie.'}
+          </p>
+
+          <div className="flex items-center gap-3">
+            {/* Bouton principal (pas encore de panier global, donc action simulée) */}
+            <button
+              type="button"
+              className="px-5 py-3 rounded-xl bg-black text-white hover:opacity-90"
+              onClick={() => alert('Panier à implémenter (prochaines étapes).')}
+            >
+              Ajouter au panier
+            </button>
+
+            {/* Bouton secondaire */}
+            <a href="/#catalog" className="px-5 py-3 rounded-xl border hover:bg-gray-50">
+              Continuer les achats
+            </a>
+          </div>
+        </section>
       </div>
 
-      {/* Contenu principal */}
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-        {/* Filtres (poussent des query params au backend) */}
-        <div className="mb-6 grid gap-4 md:grid-cols-4">
-          <label className="flex flex-col gap-1">
-            <span className="text-sm text-gray-600">Catégorie</span>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              {categories.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-          </label>
-
-          <label className="flex flex-col gap-1">
-            <span className="text-sm text-gray-600">Prix min (€)</span>
-            <input
-              type="number"
-              value={minPrice}
-              onChange={(e) => setMinPrice(e.target.value)}
-              className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </label>
-
-          <label className="flex flex-col gap-1">
-            <span className="text-sm text-gray-600">Prix max (€)</span>
-            <input
-              type="number"
-              value={maxPrice}
-              onChange={(e) => setMaxPrice(e.target.value)}
-              className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </label>
-
-          <label className="flex flex-col gap-1">
-            <span className="text-sm text-gray-600">Trier par</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value="pertinence">Pertinence (ordre backend)</option>
-              <option value="prix-asc">Prix : croissant</option>
-              <option value="prix-desc">Prix : décroissant</option>
-              <option value="nom-asc" disabled>Nom : A → Z (géré côté backend si besoin)</option>
-            </select>
-          </label>
-        </div>
-
-        {/* Compteur + reset visuel (reset côté front = vider les params) */}
-        <div className="mb-6 flex items-center justify-between">
-          <p className="text-sm text-gray-600">
-            {products.length} produit{products.length > 1 ? "s" : ""} affiché{products.length > 1 ? "s" : ""}
-          </p>
-          <button
-            onClick={() => { setCategory("toutes"); setMinPrice(""); setMaxPrice(""); setSortBy("pertinence"); }}
-            className="text-sm rounded-md border border-gray-300 bg-white px-3 py-2 hover:bg-gray-100"
-          >
-            Réinitialiser les filtres
-          </button>
-        </div>
-
-        {/* Grille de cartes (affiche directement la réponse backend) */}
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {products.map((p) => (
-            <article key={p.id} className="group overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition hover:shadow-md">
-              <div className="aspect-[4/3] bg-gray-100">
-                <img src={p.image} alt={p.name} className="h-full w-full object-cover" />
+      {/* Galerie simple si plusieurs images */}
+      {images && images.length > 1 && (
+        <section className="mt-10">
+          <h2 className="text-lg font-medium mb-3">Galerie</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {images.slice(0, 8).map((url, i) => (
+              <div key={i} className="border rounded-lg overflow-hidden">
+                <img src={url} alt={`${title} ${i + 1}`} className="w-full h-auto object-cover" />
               </div>
-              <div className="p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-medium text-gray-900">{p.name}</h3>
-                  <span className="shrink-0 rounded-md bg-gray-100 px-2 py-1 text-xs text-gray-700">{p.category}</span>
-                </div>
-                <p className="mt-2 text-lg font-semibold text-gray-900">{p.price.toFixed(2)} €</p>
-                <div className="mt-4 flex items-center justify-between">
-                  <Link href={`/products/${p.id}`} className="text-sm font-medium text-indigo-700 hover:text-indigo-900">
-                    Voir le détail →
-                  </Link>
-                  <button
-                    type="button"
-                    className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm hover:bg-gray-100"
-                    onClick={() => alert(`Aperçu rapide : ${p.name}`)}
-                  >
-                    Aperçu
-                  </button>
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
-
-        {products.length === 0 && (
-          <div className="mt-16 rounded-xl border border-dashed border-gray-300 bg-white p-10 text-center text-gray-600">
-            Aucun produit ne correspond à vos filtres.
+            ))}
           </div>
-        )}
-      </section>
+        </section>
+      )}
     </main>
   );
 }

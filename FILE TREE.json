@@ -1,0 +1,340 @@
+{
+  "name": "mini_ecommerce_CRUD",
+  "path": "c:\\Users\\hippo\\Documents\\Code\\ENTRAINEMENT\\mini_ecommerce_CRUD",
+  "type": "directory",
+  "children": [
+    {
+      "name": "backend",
+      "type": "folder",
+      "icon": "📁",
+      "children": [
+        {
+          "name": "controllers",
+          "type": "folder",
+          "icon": "📁",
+          "children": [
+            {
+              "name": "auth",
+              "type": "folder",
+              "icon": "📁",
+              "children": [
+                {
+                  "name": "login.js",
+                  "type": "file",
+                  "icon": "📜"
+                },
+                {
+                  "name": "logout.js",
+                  "type": "file",
+                  "icon": "📜"
+                }
+              ]
+            },
+            {
+              "name": "productControllers.js",
+              "type": "file",
+              "icon": "📜"
+            }
+          ]
+        },
+        {
+          "name": "middlewares",
+          "type": "folder",
+          "icon": "📁",
+          "children": [
+            {
+              "name": "CSRF.js",
+              "type": "file",
+              "icon": "📜"
+            },
+            {
+              "name": "product.validator.js",
+              "type": "file",
+              "icon": "📜"
+            },
+            {
+              "name": "rateLimits.js",
+              "type": "file",
+              "icon": "📜"
+            },
+            {
+              "name": "requireAuth.js",
+              "type": "file",
+              "icon": "📜"
+            },
+            {
+              "name": "validate.js",
+              "type": "file",
+              "icon": "📜"
+            }
+          ]
+        },
+        {
+          "name": "models",
+          "type": "folder",
+          "icon": "📁",
+          "children": [
+            {
+              "name": "AuditsEvents.js",
+              "type": "file",
+              "icon": "📜"
+            },
+            {
+              "name": "User.js",
+              "type": "file",
+              "icon": "📜"
+            },
+            {
+              "name": "product.js",
+              "type": "file",
+              "icon": "📜"
+            }
+          ]
+        },
+        {
+          "name": "routes",
+          "type": "folder",
+          "icon": "📁",
+          "children": [
+            {
+              "name": "auditRoutes.js",
+              "type": "file",
+              "icon": "📜"
+            },
+            {
+              "name": "auth.routes.js",
+              "type": "file",
+              "icon": "📜"
+            },
+            {
+              "name": "product.routes.js",
+              "type": "file",
+              "icon": "📜"
+            }
+          ]
+        },
+        {
+          "name": "utils",
+          "type": "folder",
+          "icon": "📁",
+          "children": [
+            {
+              "name": "audit.js",
+              "type": "file",
+              "icon": "📜"
+            },
+            {
+              "name": "hash.js",
+              "type": "file",
+              "icon": "📜"
+            },
+            {
+              "name": "pagination.js",
+              "type": "file",
+              "icon": "📜"
+            },
+            {
+              "name": "queryBuilder.js",
+              "type": "file",
+              "icon": "📜"
+            },
+            {
+              "name": "sanitize.js",
+              "type": "file",
+              "icon": "📜"
+            }
+          ]
+        },
+        {
+          "name": "env.js",
+          "type": "file",
+          "icon": "📜"
+        },
+        {
+          "name": "package-lock.json",
+          "type": "file",
+          "icon": "⚙️"
+        },
+        {
+          "name": "package.json",
+          "type": "file",
+          "icon": "📦"
+        },
+        {
+          "name": "server.js",
+          "type": "file",
+          "icon": "📜"
+        }
+      ]
+    },
+    {
+      "name": "frontend",
+      "type": "folder",
+      "icon": "📁",
+      "children": [
+        {
+          "name": "public",
+          "type": "folder",
+          "icon": "📁",
+          "children": [
+            {
+              "name": "file.svg",
+              "type": "file",
+              "icon": "🖼️"
+            },
+            {
+              "name": "globe.svg",
+              "type": "file",
+              "icon": "🖼️"
+            },
+            {
+              "name": "next.svg",
+              "type": "file",
+              "icon": "🖼️"
+            },
+            {
+              "name": "vercel.svg",
+              "type": "file",
+              "icon": "🖼️"
+            },
+            {
+              "name": "window.svg",
+              "type": "file",
+              "icon": "🖼️"
+            }
+          ]
+        },
+        {
+          "name": "src",
+          "type": "folder",
+          "icon": "📁",
+          "children": [
+            {
+              "name": "app",
+              "type": "folder",
+              "icon": "📁",
+              "children": [
+                {
+                  "name": "lib",
+                  "type": "folder",
+                  "icon": "📁",
+                  "children": [
+                    {
+                      "name": "api.js",
+                      "type": "file",
+                      "icon": "📜"
+                    }
+                  ]
+                },
+                {
+                  "name": "AdminAcceuil.jsx",
+                  "type": "file",
+                  "icon": "⚛️"
+                },
+                {
+                  "name": "favicon.ico",
+                  "type": "file",
+                  "icon": "📄"
+                },
+                {
+                  "name": "globals.css",
+                  "type": "file",
+                  "icon": "🎨"
+                },
+                {
+                  "name": "layout.js",
+                  "type": "file",
+                  "icon": "📜"
+                },
+                {
+                  "name": "logo.png",
+                  "type": "file",
+                  "icon": "🖼️"
+                },
+                {
+                  "name": "page.js",
+                  "type": "file",
+                  "icon": "📜"
+                }
+              ]
+            },
+            {
+              "name": "composants",
+              "type": "folder",
+              "icon": "📁",
+              "children": [
+                {
+                  "name": "Navbar.jsx",
+                  "type": "file",
+                  "icon": "⚛️"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": ".env.front",
+          "type": "file",
+          "icon": "📄"
+        },
+        {
+          "name": ".gitignore",
+          "type": "file",
+          "icon": "📁"
+        },
+        {
+          "name": "README.md",
+          "type": "file",
+          "icon": "📝"
+        },
+        {
+          "name": "jsconfig.json",
+          "type": "file",
+          "icon": "⚙️"
+        },
+        {
+          "name": "next.config.mjs",
+          "type": "file",
+          "icon": "📄"
+        },
+        {
+          "name": "package-lock.json",
+          "type": "file",
+          "icon": "⚙️"
+        },
+        {
+          "name": "package.json",
+          "type": "file",
+          "icon": "📦"
+        },
+        {
+          "name": "postcss.config.mjs",
+          "type": "file",
+          "icon": "📄"
+        }
+      ]
+    },
+    {
+      "name": ".gitignore",
+      "type": "file",
+      "icon": "📁"
+    },
+    {
+      "name": "code-fr.txt",
+      "type": "file",
+      "icon": "📄"
+    },
+    {
+      "name": "test.jsx",
+      "type": "file",
+      "icon": "⚛️"
+    }
+  ],
+  "metadata": {
+    "generated": "2025-10-24T18:39:40.691Z",
+    "generator": "FileTree Pro Extension",
+    "version": "0.2.0",
+    "showIcons": true,
+    "maxDepth": 10
+  }
+}
