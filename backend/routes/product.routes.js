@@ -19,3 +19,15 @@ productRouter.post("/", validate({body: productBase}), requireAuth(["owner", "ad
 productRouter.patch("/:id", validate({ body: updateVehicleBody }) ,requireAuth(["owner", "admin"]) ,productControllers.updateProduct )
 
 productRouter.delete("/:id", validate({params: idParam }), requireAuth(["owner", "admin"]),  productControllers.deleteProduct)
+
+productRouter.get("/count", async (req, res) => {
+  try {
+    const count = await Product.estimatedDocumentCount();
+    res.json({ count });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Unable to count products" });
+  }
+});
+
+
