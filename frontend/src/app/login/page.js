@@ -9,7 +9,7 @@ export default function loginPage(){
     const [username, setUsername] = useState("")
     const [password, setPassword] = useState("")
     const [loading, setLoading] = useState(false)
-    const  [err, setError] = useState("")
+    const  [error, setError] = useState("")
 
     async function onSubmit(e){
         e.preventdefault()
@@ -25,4 +25,38 @@ export default function loginPage(){
             setLoading(true)
         }
     }
+
+    return (
+        <main className="">
+            <form
+            onSubmit={onSubmit}
+            className="">
+                <h1 className="">Connectez-vous !</h1>
+                <input
+                value={username}
+                onChange={((e) => setUsername(e.target.value) )}
+                className=""
+                autoComplete="username"
+                placeholder="Entrez votre nom d'utilisateur"
+                ></input>
+
+                <input
+                value={password}
+                onChange={((e) => setPassword(e.target.value) )}
+                className=""
+                autoComplete="password"
+                placeholder="Entrez votre mots de passe"
+                ></input>
+            </form>
+
+            {err && <p className="">{error}</p>}
+
+            <button 
+            disabled={loading}
+            className=""
+            >
+            {loading ? "Connexion...": "Se connecter"}
+            </button>
+        </main>
+    )
 }
