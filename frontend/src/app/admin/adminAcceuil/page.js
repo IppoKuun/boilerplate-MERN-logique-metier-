@@ -1,5 +1,6 @@
 import api from "@/app/lib/api"
 import { useEffect, useState } from "react"
+import Image from "next/image"
 
 const [recentProducts, setRecentproducts] = useState([])
 const [recentAudits, setRecentsaudits] = useState([])
@@ -57,13 +58,36 @@ return(
         </div>
         <section className="">
             <div className="">
+                <span className="">5 Dernier produits</span>
                 <ul className="">
-                {recentProducts.map((p) => {
-                    <li key={p._id} className=""></li>
-                })}
+                    {recentProducts.map((p) => {
+                        <li key={p._id} className="">
+                            <div className="">
+                                <Image 
+                                src={p.image}
+                                />
+                                <span className=""> {p.slug} </span>
+                                <div className="text-xs text-gray-500">
+                                    {p.price != null
+                                    ? new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(p.price)
+                                    : "—"}
+                                </div>
+                            </div>
+                        </li>
+                    })}
                 </ul>
             </div>
             <div className="">
+                <p className=""> 5 Dernier Audits </p>
+                <ul className="">
+                    {recentAudits.map((a) => {
+                        <li key={a._id || a.id} className="flex items-start gap-3">
+                              <span className="mt-1 text-xs px-2 py-0.5 rounded bg-gray-100">{a?.event }</span>
+                              <span className="">{a.actor.user} </span>
+                              <span className=""> {a.ts} </span>
+                        </li>
+                    })}
+                </ul>
 
             </div>
         </section>
