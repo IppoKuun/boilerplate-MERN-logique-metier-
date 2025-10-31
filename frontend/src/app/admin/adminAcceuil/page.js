@@ -2,8 +2,8 @@ import api from "@/app/lib/api"
 import { useEffect, useState } from "react"
 import Image from "next/image"
 
-const [recentProducts, setRecentproducts] = useState([])
-const [recentAudits, setRecentsaudits] = useState([])
+const [recentProducts, setRecentProducts] = useState([])
+const [recentAudits, setRecentsAudits] = useState([])
 const [health, setHealth] = useState("")
 const [ttProd, setTtprod] = useState(0)
 const [err, setErr] = useState(null)
@@ -25,8 +25,8 @@ useEffect(() => {
             setLoading(false)
         }
     setHealth(h.ok ? "up" :"down")
-    setRecentproducts(p.items ?? [])
-    setRecentsaudits(a.items ?? [])
+    setRecentProducts(p.items ?? [])
+    setRecentsAudits(a.items ?? [])
     setTtprod()
     }
     return () => controller.abort()
@@ -38,6 +38,9 @@ useEffect(() => {
 
 return(
     <main className="">
+              {err && (
+        <div className="bg-red-50 text-red-700 border border-red-200 p-3 rounded">{err}</div>
+        )}
             <h1 className=""> Admin - Dashboard</h1>
         <div className="">
             <section className="">
