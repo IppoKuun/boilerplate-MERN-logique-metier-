@@ -24,4 +24,4 @@ const AuditEventSchema = new Schema({
 AuditEventSchema.index({"actor.user" : 1, ts:-1})
 AuditEventSchema.index({"target.slug" : 1, ts:-1})
 
-export default mongoose.model("AuditEvent", AuditEventSchema, );
+export default mongoose.model("AuditEvent", AuditEventSchema );

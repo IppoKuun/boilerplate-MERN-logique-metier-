@@ -1,0 +1,72 @@
+import api from "@/app/lib/api"
+import { useEffect, useState } from "react"
+
+const [recentProducts, setRecentproducts] = useState([])
+const [recentAudits, setRecentsaudits] = useState([])
+const [health, setHealth] = useState("")
+const [ttProd, setTtprod] = useState(0)
+const [err, setErr] = useState(null)
+const [loading, setLoading] = useState(false)
+
+useEffect(() => {
+    const controller = new AbortController()
+    async() => {
+        try{
+            setLoading(true)
+            const [{data:h}, {data:p}, {data:a}] = Promise.all([
+                api.get("/health", {signal: controller.signal}),
+                api.get("/products", {params: {limit:5, sortBy: "desc"},  signal: controller.signal}),
+                api.get("/audits", {params: {limit:5, sortBy: "desc"},  signal: controller.signal}),
+            ])
+        } catch(e) {
+            if (e.message !== "CanceledError") setErr(e.message)
+        } finally{ 
+            setLoading(false)
+        }
+    setHealth(h.ok ? "up" :"down")
+    setRecentproducts(p.items ?? [])
+    setRecentsaudits(a.items ?? [])
+    setTtprod()
+    }
+    return () => controller.abort()
+
+}, [])
+
+    if (loading) return(<div className="" loading label="Initiatialisation du dashboard"> </div>)
+
+
+return(
+    <main className="">
+            <h1 className=""> Admin - Dashboard</h1>
+        <div className="">
+            <section className="">
+                <span className=""> Santé du serveur </span>
+                <span
+                    className={`mt-1 inline-block px-2 py-0.5 rounded text-sm font-medium
+                        ${health === "up"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-800"}`}
+                    >
+                    {health}
+                </span>
+            </section>
+            <section className="">
+                <span className=""> Produit dans la boutiques</span>
+                <span className=""> {ttProd ?? 0}</span>
+            </section>
+        </div>
+        <section className="">
+            <div className="">
+                <ul className="">
+                {recentProducts.map((p) => {
+                    <li key={p._id} className=""></li>
+                })}
+                </ul>
+            </div>
+            <div className="">
+
+            </div>
+        </section>
+    </main>
+
+)
