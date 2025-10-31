@@ -24,6 +24,10 @@ export default function Home() {
 
   const [loading, setLoading] = useState(false)
   const [err, setErr] = useState("")
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(12);
+  const [meta, setMeta] = useState(null); 
+
 
   const params = useMemo (()=> {
     const p = {}
@@ -35,8 +39,20 @@ export default function Home() {
     if (m.sortBy) p.sortBy = m.sortBy
     if (m.order) p.order = p.order
 
+    p.page = page;
+    p.limit = limit;
     return p
-  })
+  }, [category, minPrice, maxPrice, sortBy, page, limit])
+
+    // Exemples possibles : adapte aux clés de ton buildMeta
+  const metaFromApi =
+    res?.data?.meta ||               // { page, limit, total, totalPages, ... }
+    res?.data?.pagination || null;
+
+  if (alive) setMeta(metaFromApi);
+
+    useEffect(() => { setPage(1); }, [category, minPrice, maxPrice, sortBy]);
+
 
   useEffect(()=> {
     let compAlive = true
@@ -157,6 +173,28 @@ export default function Home() {
             </p>
           )}
       </main>
+      <div className="mt-8 flex items-center justify-between">
+          <button
+            className="rounded-md border px-3 py-2 text-sm disabled:opacity-50"
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page <= 1}
+          >
+            ← Précédent
+          </button>
+
+          <div className="text-sm text-gray-700">
+            Page {meta?.page ?? page} / {meta?.totalPages ?? "?"}
+          </div>
+
+          <button
+            className="rounded-md border px-3 py-2 text-sm disabled:opacity-50"
+            onClick={() => setPage(p => p + 1)}
+            disabled={meta?.totalPages ? page >= meta.totalPages : false}
+          >
+            Suivant →
+          </button>
+      </div>
+
     </div>
   );
 }
