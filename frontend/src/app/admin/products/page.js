@@ -75,15 +75,33 @@ return (
             ></button>
 
             <div className="">
+                <label className=""> Catégories</label>
                 <select className="" 
                 label="Veuillez entrez une catégories"
-                onChange={(e) => setCategories()}
+                onChange={(e) => setCategories(e.target.value)}
+                value={categories}
                 >
-
+                <option className="">Toutes</option>
+                {categories && categories.map((c)=>{
+                    <option key={c.id || c._id} value={c}>{c} </option>
+                })}
                 </select>
             </div>
-
+            <div className="">
+                <label className=""> Trier par:</label>
+                <select className="" value={sort} onChange={(e) => setSort(e.target.value)} >
+                    <option className="" value={"recent"}>Récent</option>
+                    <option className="" value={"price-desc"}>Croissant</option>
+                    <option className="" value={"price-asc"}>Décroissant</option>
+                </select>
+            </div>
+            <div className="">
+                <button onClick={setSort("recent")}>Réintitialiser</button>
+            </div>
         </div>
+        
+        <ProductTable loading={loading} products={products} onEdit={replaceProduct} onDeleted={removeProductById}  />
+        
 
     </main>
 )
