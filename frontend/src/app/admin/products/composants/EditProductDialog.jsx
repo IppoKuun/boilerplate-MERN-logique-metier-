@@ -1,30 +1,31 @@
 "use client";
-import React, { useEffect, useRef, useState } from "react";
-import * as Dialog from "@radix-ui/reacMais t-dialog";
+import React, { useEffect, useState } from "react";
+import * as Dialog from "@radix-ui/react-dialog";
 import { FormProvider, useForm } from "react-hook-form";
 import ProductForm from "./ProductForm";
 import api from "@/app/lib/api";
 import toast from "react-hot-toast";
+import React from "react";
+import ProductForm from "./ProductForm";
 
-export default function AddProductDialog(parOpen, setparOpen, onCreated) {
-    const [internalOpen, setInternalOpen] = useState(parOpen)
-    useEffect(()=> { parOpen && setparOpen(internalOpen)}, [internalOpen])
+export default function EditProductDialog({editProduct, onClose, onUpdated, onDeleted}){
+    const [open, setOpen] = useState(!!product)
+    useEffect(()=> {methods.reset(editProduct)}, [editProduct])
 
-    const methods = useForm({ 
-        defaultValues:{ nom: "", description:"", shortDesc:"", price:"", category:"", images:[]}, mode: onChange })
-
-    const onSubmit = async(values) => {
+    const onSubmit = async (values) => {
         try{
-            const {data } = await api.post("/products", values)
-            toast.succes(" Produis envoyé avec succès")
-        } catch (e){
-            toast.error(e.message)
+            const {data} =  api.patch("products", values);
+            toast.succes("Le produit a été modifié avec succés")
+            setOpen(false)
+            onUpdated(data || data?.data)
+            onClose()
+        } catch(e){
+            toast.error(err.msg)
         }
-        onCreated?.(data);
-        methods.reset ()
+
     }
 
-    return (
+    return(
         <Dialog.root open={parOpen} onOpenChange={(e)=>{ 
         const e = (!window.confirm("Voulez vous fermer la page ?"));
         if (e && methods.formState.isDirty) {
@@ -39,10 +40,11 @@ export default function AddProductDialog(parOpen, setparOpen, onCreated) {
                     <Dialog.Title className=""></Dialog.Title>
                         <FormProvider {...methods}>
                             <ProductForm  onSubmit={handleSubimit(onSubmit(values))} 
-                            submiteState={methods.formState.isSubmit ? "Enregistrement..." :  "Enregistrer" } />
+                            submiteState={methods.formState.isSubmit ? "Enregistrement..." :  "Enregistrer les modifications" } />
                         </FormProvider>
                 </Dialog.content>
             </Dialog.Portal>
         </Dialog.root>
     )
 }
+    

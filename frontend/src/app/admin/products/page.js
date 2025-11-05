@@ -125,7 +125,7 @@ return (
         </div>
         {parOpen && <AddProductDialog  parOpen={parOpen} setparOpen={setparOpen} onCreated={(p) => { newProduct(p); setparOpen(false)}} />}
 
-        {editing && <editProductDialog  products={products} onUpdated={(p) => {replaceProduct(id)}} onDeleted={(id) => removeProductById(id) }  />}
+        {editing && <editProductDialog  editProduct={editing} onClose={()=>setEditing(null)} onUpdated={(p) => {replaceProduct(id)}} onDeleted={(id) => removeProductById(id) }  />}
 
     </main>
 )
