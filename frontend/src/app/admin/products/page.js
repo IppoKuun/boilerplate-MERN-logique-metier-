@@ -9,7 +9,7 @@ export default function page () {
     const [meta, setMeta] = useState({page:1, limit:10, sort:"recent"})
     const [loading, setLoading] = useState(false)
 
-    const [open, setOpen ] = useState(false)
+    const [parOpen, setparOpen ] = useState(false)
     const [editing, setEditing] = useState(null)
 
     const ttPages = useMemo(()=> {
@@ -73,7 +73,7 @@ return (
         <div className="">
             <h1 className="">Produits</h1>
             <button className=""
-            onClick={setOpen(false)}
+            onClick={setparOpen(false)}
             ></button>
 
             <div className="">
@@ -123,7 +123,7 @@ return (
                 <button onClick={prevPage} disabled={meta.page > ttPages} className=""> </button>
             </div>
         </div>
-        {open && <AddProductDialog  open={open} setOpen={setOpen} onCreated={(p) => { newProduct(p); setOpen(false)}} />}
+        {parOpen && <AddProductDialog  parOpen={parOpen} setparOpen={setparOpen} onCreated={(p) => { newProduct(p); setparOpen(false)}} />}
 
         {editing && <editProductDialog  products={products} onUpdated={(p) => {replaceProduct(id)}} onDeleted={(id) => removeProductById(id) }  />}
 

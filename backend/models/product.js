@@ -33,8 +33,6 @@ const productSchema = new mongoose.Schema({
     }
     next();
     });
-
-
 productSchema.index({ nom: 1 });
 productSchema.index({ price: 1 });
 productSchema.index({ category: 1 });
