@@ -6,9 +6,11 @@ export default function page () {
     const [products, setProducts] = useState({})
     const [categories, setCategories] = useState([])
     const [sort, setSort] = useState("recent"); // recent | price-asc | price-desc
-    const [open, setOpen ] = useState(false)
     const [meta, setMeta] = useState({page:1, limit:10, sort:"recent"})
     const [loading, setLoading] = useState(false)
+
+    const [open, setOpen ] = useState(false)
+    const [editing, setEditing] = useState(null)
 
     const ttPages = useMemo(()=> {
         Math.ceil(meta.page /meta.total || 0)
@@ -100,8 +102,30 @@ return (
             </div>
         </div>
         
-        <ProductTable loading={loading} products={products} onEdit={replaceProduct} onDeleted={removeProductById}  />
+        <ProductTable loading={loading} products={products} 
+        onEdit={(p) => setEditing(p)} 
+        onDeleted={async(p)=>{
+            if(!window.confirm("Voulez vous supprimé ce produit ?")) {
+            try{
+                await api.get(`/products/${p.id ||p._id}`)
+                toast.succed("Produit supprimé avec succées.")
+                removeProductById(p.id||p._id)
+            } catch(e){
+                toast.error(e.message || "La suppression a échoué.")
+            }
+            }
+        }}/>
         
+        <div className="">
+            <div className=""> Page {meta.page} / {Math.max(1,ttPages)} </div>
+            <div className="">
+                <button onClick={prevPage} disabled={meta.page < 1} className=""> </button>
+                <button onClick={prevPage} disabled={meta.page > ttPages} className=""> </button>
+            </div>
+        </div>
+        {open && <AddProductDialog  open={open} setOpen={setOpen} onCreated={(p) => { newProduct(p); setOpen(false)}} />}
+
+        {editing && <editProductDialog  products={products} onUpdated={(p) => {replaceProduct(id)}} onDeleted={(id) => removeProductById(id) }  />}
 
     </main>
 )
