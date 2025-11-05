@@ -32,7 +32,7 @@ export default function (onSubmit, submitLabel, onDeleted) {
                 <input className="" placeholder="Alimentaires"{...register("Categories")} ></input>
             </div>
             
-            <ImagesFields field="images"/>
+            <ImagesFields field="formImages"/>
             {onDeleted && (
                 <button className="" onClick={onDeleted}>Supprimer le produit</button>
             )}
