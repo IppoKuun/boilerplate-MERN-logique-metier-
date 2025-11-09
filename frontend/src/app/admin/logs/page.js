@@ -4,8 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 
 
 
-export default async function LogsPage(){
-    const [logs, setLogs] = useState({})
+export default function LogsPage(){
+    const [logs, setLogs] = useState([])
     const [meta, setMeta]= useState({ page:1, limit:30, total:0})
     const [sort, setSort] = useState("desc")
     const [eventFilter, setEventFilter] = useState("toutes")
@@ -20,36 +20,35 @@ export default async function LogsPage(){
     //EXTRAIRE EVENNEMENT EN ARRAY 
 
         const knowEvents = useMemo(()=> {
-            const event = logs.map((l)=> l.event)
-            const s = new Set ([Array.from(event).sort()])
-            return s
+            const arr = logs.map((l)=> l.event).filter(Boolean)
+            return Array.from(new Set(arr)).sort();
         }, [logs])
 
 
-        const fetchLogs = useCallback(async (pageAc)=> {
+        const fetchLogs = useCallback(async () => {
         try{
             setLoading(true)
             const params =({
                 page: meta.page,
-                limit:30,
+                limit:meta.limit ?? 30,
                 sortBy:"ts",
                 order:sort,
-                events: eventFilter
+                ...(eventFilter && eventFilter !== "toutes" ? { events: eventFilter }: {})
             })
 
-        const {data} = api.get("/audits", { params})
-        setLogs(data.data || data.items || {})
+        const {data} = await api.get("/audits", { params})
+        setLogs(data.data || data.items || [])
         setMeta(data.meta)
         } catch(e){
-            console.log(e.msg)
+            console.log(e.message)
         }finally{
-            setLoading(true)
+            setLoading(false)
         }
-        }, [meta.page], [meta.limit], sort, eventFilter)
+        }, [meta.page, meta.limit, sort, eventFilter])
 
             useEffect(()=> {
             fetchLogs()
-            }, [meta.page], fetchLogs, sort, eventFilter)
+            }, [fetchLogs])
 
             const nextPage = () => {
                 if (meta.page < ttPages) setMeta(m => ({ ...m, page: m.page + 1 }));
@@ -58,34 +57,27 @@ export default async function LogsPage(){
                 if (meta.page > 1) setMeta(m => ({ ...m, page: m.page - 1 }));
             };
 
-            // reset filtres
             const resetFilters = () => {
-                setEventFilter("");
+                setEventFilter("toutes");
                 setSort("desc");
                 setMeta(m => ({ ...m, page: 1 }));
             };
 
-
-            //TRI EVENT
-            //TRI SORT
-            //CREATION TABLEAU
-            //SI LOADING OU PAS LOHGS
-            //MAP
-            //FOOTER
     return(
         <main className="">
             <div className="">
                 <label className="">Trier par:</label>
                 <select value={eventFilter} className="" onChange={(e) => setEventFilter(e.target.value)}>
-                    <option className="">Toutes</option>
-                    {knowEvents.map((l)=> {
+                    <option className="" value={toutes}>Toutes</option>
+                    {knowEvents.map((l)=> (
                         <option value={l} className="" key={l.id||_id}>{l}</option>
-                    })}
+                    ))}
                 </select>
                 <select value={sort} onChange={(e)=> setSort(e.target.value)}>
-                    <option value={sort}>Croissant</option>
-                    <option value={sort}>Décroissant</option>
+                    <option value="asc">Croissant</option>
+                    <option value="desc">Décroissant</option>
                 </select>
+                <button className="" onClick={resetFilters}>Réinitialisez les filtres</button>
             </div>
 
             <table>
@@ -102,11 +94,11 @@ export default async function LogsPage(){
                     {loading && (
                         <tr><td colSpan={4}>Chargemet des logs</td></tr>
                     )}
-                    {logs.length === 0 (
+                    {logs.length === 0 && (
                         <tr><td colSpan={4}>Aucun logs pour l'instant</td></tr>
                     )}
 
-                    {logs.map((p)=> {
+                    {logs.map((p)=> (
                         <tr className="" key={p.id||p._id}>
                             <td className="">
                                 {p.target}
@@ -118,10 +110,10 @@ export default async function LogsPage(){
                                 {p.event}
                             </td>
                             <td className="">
-                                {p.user}
+                                {p.actor.user}
                             </td>
                         </tr>
-                    })}
+                    ))}
                 </tbody>
             </table>
             

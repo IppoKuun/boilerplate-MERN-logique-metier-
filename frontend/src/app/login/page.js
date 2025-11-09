@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { auth } from "../lib/authApi"
 
-export default function loginPage(){
+export default function LoginPage(){
     const router = useRouter()
 
     const [username, setUsername] = useState("")
@@ -12,7 +12,7 @@ export default function loginPage(){
     const  [error, setError] = useState("")
 
     async function onSubmit(e){
-        e.preventdefault()
+        e.preventDefault()
         setError("")
         setLoading(true)
 
@@ -20,9 +20,9 @@ export default function loginPage(){
             await auth.login({username, password})
             router.replace("/admin")
         } catch(e){
-            setError(err?.message || err?.msg || "erreur de connexion")
+            setError(e?.message || e?.msg || "erreur de connexion")
         } finally {
-            setLoading(true)
+            setLoading(false)
         }
     }
 
@@ -33,6 +33,7 @@ export default function loginPage(){
             className="">
                 <h1 className="">Connectez-vous !</h1>
                 <input
+                type="text"
                 value={username}
                 onChange={((e) => setUsername(e.target.value) )}
                 className=""
@@ -41,22 +42,23 @@ export default function loginPage(){
                 ></input>
 
                 <input
+                type="password"
                 value={password}
                 onChange={((e) => setPassword(e.target.value) )}
                 className=""
                 autoComplete="password"
                 placeholder="Entrez votre mots de passe"
                 ></input>
+                
+                <button 
+                disabled={loading || !username || !password }
+                className="">
+                {loading ? "Connexion...": "Se connecter"}
+                </button>
             </form>
 
-            {err && <p className="">{error}</p>}
+            {error && <p className="">{error}</p>}
 
-            <button 
-            disabled={loading}
-            className=""
-            >
-            {loading ? "Connexion...": "Se connecter"}
-            </button>
         </main>
     )
 }

@@ -27,6 +27,16 @@ const Url = config.MONGO.Url
 }
 const app = express()
 
+app.post("/api/cloudinary/sign", (req, res) => {
+  const { folder } = req.body;
+  const timestamp = Math.round(new Date().getTime() / 1000);
+  const paramsToSign = `timestamp=${timestamp}${folder ? `&folder=${folder}` : ""}${process.env.CLOUDINARY_API_SECRET}`;
+  const signature = crypto.createHash("sha1").update(paramsToSign).digest("hex");
+
+  res.json({ timestamp, signature, folder });
+});
+  
+
 app.use("/api/product", productRouter)
 app.use("/api/audits", auditRouter)
 app.use(checkOrigin);

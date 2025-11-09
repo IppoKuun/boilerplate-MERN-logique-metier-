@@ -1,78 +1,96 @@
+// src/app/products/[slug]/page.js
 import { notFound } from "next/navigation";
-import { CldImage, CldUploadButton } from 'next-cloudinary';
-
-//AJOUTEZ LES PRODUITS SIMILAIRES ET LA GALERIE. //
-
+import Image from "next/image"; // utile si tu gardes des images statiques (logo, etc.)
+import GalleryClient from "@/components/GalleryClient"; // <-- adapte le chemin
 export const revalidate = 60;
 
+/** Récupération d'un produit par slug (SSR/SSG avec revalidate) */
 async function getProductBySlug(slug) {
-    const res = await fetch(`http://localhost:4000/backend/products/${products.slug}`)
-    if (res.status === 404) {
-        return notFound()
-    }
+  const res = await fetch(
+    `http://localhost:4000/backend/products/${encodeURIComponent(slug)}`,
+    { next: { revalidate: 60 } }
+  );
 
-    if (!res.ok) {
-        throw new Error(`Erreur connexion backend: ERR ${res.status}`)
-    }
+  if (res.status === 404) return notFound();
+  if (!res.ok) throw new Error(`Erreur backend: ${res.status}`);
 
-    const data = await res.json()
-    return data || res.data || res.data.data
+  const data = await res.json();
+  // tolère différents enveloppages de réponse
+  return data?.data ?? data;
 }
 
-function formatPrice(price, currency = 'EUR', locale = 'fr-FR') {
-  // Petit helper : affichage propre des prix (ex: 19,90 €)
+/** Affichage localisé du prix */
+function formatPrice(price, currency = "EUR", locale = "fr-FR") {
   try {
-    return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(price ?? 0);
+    return new Intl.NumberFormat(locale, { style: "currency", currency }).format(price ?? 0);
   } catch {
     return `${price ?? 0} ${currency}`;
   }
 }
 
-export default async function ProductPage({params}) {
-    const {slug} = params;
+/** Normalisation des images vers string[] (URL) */
+function toUrls(images) {
+  if (!images) return [];
+  return images
+    .map((x) => {
+      if (typeof x === "string") return x;
+      // différents cas d’objets (Cloudinary)
+      return x?.url || x?.secure_url || null;
+    })
+    .filter(Boolean);
+}
 
-    const product = await getProductBySlug(slug);
+export default async function ProductPage({ params }) {
+  const { slug } = params;
+  const product = await getProductBySlug(slug);
 
-    const {
-        nom= "",
-        images= [],
-        category= "",
-        price= 0,
-        shortDesc= "",
-        description= "", } = product || {};
+  const {
+    nom = "",
+    images = [],
+    category = "",
+    price = 0,
+    shortDesc = "",
+    description = "",
+  } = product || {};
 
-        const imageToShow = images?.[0] || ""
-        return (
-            <div>
-              <image href="logo.png"
-              className="">
-              </image>
-              <section className="">
-                <div className="">
-                  <Image 
-                  className=""
-                  />
-                  <div className="">
-                    <h1 className=""> {product.nom} </h1>
-                    <h2 className=""> {product.price} </h2>
-                    <button className="">Ajoutez au panier</button>
-                  </div>
-                </div>
-                <div className="">
-                  {productSimilar && (
-                    productSimilar.map((p) => {
-                      <article key={p._id} className="">
-                        <CldImage
-                        src=""
-                        ></CldImage>
-                        <h3 className="" >{p.nom}</h3>
-                        <span className="">{p.price}</span>
-                        <p className="">{p.shortDesc}</p>
-                      </article> 
-                    })
-                  )}
-                </div>
-              </section>
-            </div>
-        )
-    }
+  const imageUrls = toUrls(images); // <- prêt pour la galerie
+
+  return (
+    <main className="container mx-auto max-w-6xl px-4 py-8">
+      {/* En-tête produit */}
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Galerie */}
+        <div>
+          <GalleryClient images={imageUrls} alt={nom || "Produit"} />
+        </div>
+
+        {/* Infos produit */}
+        <div className="space-y-4">
+          <h1 className="text-2xl md:text-3xl font-semibold">{nom}</h1>
+          {category && <div className="text-sm text-gray-500">{category}</div>}
+          <div className="text-xl font-bold">{formatPrice(price)}</div>
+          {shortDesc && <p className="text-gray-700">{shortDesc}</p>}
+
+          <button
+            type="button"
+            className="rounded-lg bg-black text-white px-4 py-2 hover:bg-gray-900"
+            aria-label="Ajouter au panier"
+          >
+            Ajouter au panier
+          </button>
+        </div>
+      </section>
+
+      {/* Description */}
+      {description && (
+        <section className="mt-10 prose prose-sm md:prose">
+          <h2>Description</h2>
+          <p>{description}</p>
+        </section>
+      )}
+
+      {/* Produits similaires (optionnel) */}
+      {/* À brancher: fetch côté serveur, puis mapper ici. */}
+    </main>
+  );
+}

@@ -1,4 +1,5 @@
-import { FormProvider, useForm } from "react-hook-form";
+//ProductForm.jsx//
+import { useFormContext } from "react-hook-form";
 
 export default function (onSubmit, submitLabel, onDeleted) {
     const [ register, formState = {errors, isSubmiting}] = useFormContext()
@@ -13,15 +14,15 @@ export default function (onSubmit, submitLabel, onDeleted) {
             )}
             <div className="">
                 <label className="">Nom *</label>
-                <input className="" placeholder="Produits"{...register("name")} ></input>
+                <input className="" placeholder="Produits"{...register("name", {required:true})} ></input>
             </div>
                 <div className="">
                 <label className="">Prix *</label>
-                <input className="" placeholder="0.00"{...register("price")} ></input>
+                <input className="" placeholder="0.00"{...register("price", {required:true})} ></input>
             </div>
                 <div className="">
                 <label className="">Descritpion courte</label>
-                <input className="" placeholder="...."{...register("ShortDesc")} ></input>
+                <input className="" placeholder="...."{...register("shortDesc")} ></input>
             </div>
                 <div className="">
                 <label className="">Description</label>
@@ -29,15 +30,15 @@ export default function (onSubmit, submitLabel, onDeleted) {
             </div>
                 <div className="">
                 <label className="">Catégories</label>
-                <input className="" placeholder="Alimentaires"{...register("Categories")} ></input>
+                <input className="" placeholder="Alimentaires"{...register("Category")} ></input>
             </div>
             
-            <ImagesFields field="formImages"/>
+            <ImagesFields field="Images"/>
             {onDeleted && (
                 <button className="" onClick={onDeleted}>Supprimer le produit</button>
             )}
             <button className="" onClick={() => {history.back()}}> Annuler </button>
-            <button className="" type="submit" disabled={isSubmiting} onClick={onSubmit}>{submitLabel}</button>
+            <button className="" type="submit" disabled={isSubmiting}>{submitLabel}</button>
         </form>
     )
 }

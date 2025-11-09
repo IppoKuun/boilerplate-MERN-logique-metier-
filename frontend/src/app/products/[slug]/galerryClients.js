@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-// Si tu utilises next/image, décommente la ligne suivante et remplace <img> par <Image>
-// import Image from "next/image";
+
 
 export default function GalleryClient({ images = [], alt = "Produit" }) {
   const valid = images.filter(Boolean);

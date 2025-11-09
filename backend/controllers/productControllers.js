@@ -7,10 +7,10 @@ import audit from "../utils/audit"
 
 export default async function list(req, res){
 
-  const {filter, sort, sortBy, order } = queryBuilder(req.query,{
+  const {filter, sortBy, order } = queryBuilder(req.query,{
     equals: new Set ([ "nom", "category", "slug" ]),
     ranges: new Set([ "price" ]),
-    allowedSort: new Set ([ "price" ]),
+    allowedSort: new Set (["price"]),
   })
 
     const {page, limit, skip} = pagination(req.query, 
@@ -21,7 +21,6 @@ export default async function list(req, res){
       Product.countDocuments(filter)
     ])
   const meta = buildMeta({ page, limit, total, sortBy, order})
-
   return res.status(200).json({items, meta})
 }
 
@@ -76,7 +75,7 @@ async function deleteProduct(req, res){
       event: "product.update",
       target:{
         type: "produit",
-        id: String(updateProduct),
+        id: String(updProduct._id),
         slug: updProduct.slug
       }
      })

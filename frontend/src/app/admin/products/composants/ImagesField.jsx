@@ -1,3 +1,4 @@
+//ImagesFields//
 "use client";
 import React from "react";
 import { useFormContext } from "react-hook-form";
@@ -9,24 +10,26 @@ import api from "@/app/lib/api";
 const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 
 const getCloudinarySignature = async () => {
-    const {data}= api.post("cloudinary/sign", {folder:"products"})
+    const { data }= await api.post("/cloudinary/sign", {folder:"products"})
     return data
 } 
 
 async function uploadToCloudinary(files) {
     if(!CLOUD_NAME) {throw new Error({message : "Clé Cloudinary manquant"})};
-    const sig = getCloudinarySignature()
-    const form = FormData()
+    const sig = await getCloudinarySignature()
+    const form = new FormData()
     form.append("files", files)
     form.append("sign", sig.signatures)
-    form.append("timestamps", sig.timestamps )
+    form.append("timestamp", sig.timestamp )
     if (sig.folder) form.append("folder", sig.folder);
     form.append("signature", sig.signature);
+    form.append("api_key", sig.apiKey)
     const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, 
     { method: "POST", body: form });
     const json= await res.json()
-    if(!json) {throw new Error("Erreur d'upload cloudinary")}
+    if(!json) {throw new Error({message: "Erreur d'upload cloudinary"})}
     return{ public_id : json.public_id, url: json.secure_url }
+}
 
     function SortableImage({ id, url, alt }) {
     const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({ id });
@@ -41,33 +44,36 @@ async function uploadToCloudinary(files) {
     </div>
     );
     }
-}
+
 
     export default function ImagesField({fields}){
-        const [watch, setValue] = useFormContext()
-        const images= setValue(formImages)
+        const {watch, setValue} = useFormContext()
+        const images= watch(fields)
 
         const uploadFiles = async (files) => {
             if(!files) return
             const uploads = Array.from(files).slice(0, 20- images.length)
-            const result = []
-            for (const f of files) {result.push(uploadToCloudinary(f))}
+            const result = await Promise.all(uploads.map(f => uploadToCloudinary(f)))
             const nvArray = [...images, ...result]
-            setValue(formImages, nvArray, {isDirty: true})
+            setValue(fields, nvArray, {isDirty: true})
         }
         const onDragEnd = (event) => {
             const { active, over } = event; if (!over || active.id === over.id) return;
             const oldIndex = images.findIndex((x)=>x.public_id===active.id);
             const newIndex = images.findIndex((x)=>x.public_id===over.id);
             const next = arrayMove(images, oldIndex, newIndex);
-            setValue(name, next, { shouldDirty: true });
+            setValue(fields, next, { shouldDirty: true });
         };
+              const sensors = useSensors(
+    useSensor(MouseSensor),
+    useSensor(TouchSensor)
+    );
 
         
   return (
     <div className="space-y-3">
       <label className="block text-sm font-medium text-gray-700">Images (max 20) — La 1ʳᵉ est la couverture</label>
-      <input type="file" accept="image/*" multiple onChange={(e)=>onFiles(e.target.files)} />
+      <input type="file" accept="image/*" multiple onChange={(e)=> uploadFiles(e.target.files)} />
       <DndContext sensors={sensors} onDragEnd={onDragEnd}>
         <SortableContext items={images.map((x)=>x.public_id)} strategy={verticalListSortingStrategy}>
           <div className="space-y-2">

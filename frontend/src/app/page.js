@@ -1,29 +1,24 @@
 "use client"
-
+import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import api from "./lib/api";
 
 const getCategories = (products) => {
-  const cat = products.map((p) => {p.category})
-  const s = new Set([cat])
-  return["toutes",... Arrayfrom(s)]}
+  const cat = products.map((p) => (p.category))
+  const s = new Set(cat)
+  return["toutes",... Array.from(s)]
+}
 
-  const mapSort = (s) => {
-    switch(s){
-      case "asc": return {sortBy:price, order:asc};
-      case "desc": return {sortBy: price, order: desc};
-      case "recent" :return {}
-    }
-  }
 export default function Home() {
-  const [products, setAllproducts]= useState({})
+  const [products, setAllproducts]= useState([])
   const [minPrice, setMinPrice] =useState(0)
   const [maxPrice, setMaxPrice] = useState(100)
   const [category, setCategory] = useState("")
 
   const [loading, setLoading] = useState(false)
   const [err, setErr] = useState("")
+  const [sort, setSort] = useState("default")
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(12);
   const [meta, setMeta] = useState(null); 
@@ -31,67 +26,66 @@ export default function Home() {
 
   const params = useMemo (()=> {
     const p = {}
+
     if (category && category !== "toutes") p.category = category;
-    if (minPrice !== "") p["minPrice"] = minPrice;
-    if (maxPrice !== "") p["maxPrice"] = maxPrice;
+    if (minPrice !== "") p.minPrice = Number(minPrice);
+    if (maxPrice !== "") p.maxPrice = Number(maxPrice);
 
-    const m = mapSort(p)
-    if (m.sortBy) p.sortBy = m.sortBy
-    if (m.order) p.order = p.order
-
+  if (sort === "asc" || sort === "desc") {
+    p.sortBy = "price";
+    p.order = sort;}
     p.page = page;
     p.limit = limit;
     return p
-  }, [category, minPrice, maxPrice, sortBy, page, limit])
+  }, [category, minPrice, maxPrice, page, limit, sort])
 
-    // Exemples possibles : adapte aux clés de ton buildMeta
-  const metaFromApi =
-    res?.data?.meta ||               // { page, limit, total, totalPages, ... }
-    res?.data?.pagination || null;
 
-  if (alive) setMeta(metaFromApi);
 
-    useEffect(() => { setPage(1); }, [category, minPrice, maxPrice, sortBy]);
+    useEffect(() => { setPage(1); }, [category, minPrice, maxPrice]);
 
 
   useEffect(()=> {
-    let compAlive = true
     const controllers = new AbortController()
-    setTimeout( async () => {
+    const t = setTimeout( async () => {
       try{
         setLoading(true)
-        setErr(false)
+        setErr("")
 
         const res = await api.get("/products", {params, signal: controllers.signal })
 
-        const safeItems = res?.data.map((i) => ({
+          const metaFromApi =
+          res?.data?.meta ||            
+          res?.data?.pagination || null;
+
+            setMeta(metaFromApi);
+
+        const safeItems = res?.data.items.map((i) => ({
           id: i.id || i._id,
           shortDesc: i.shortDesc,
           slug : i.slug,
-          images: p.images?.[0],
+          images: i.images?.[0],
           category: i.category,
           price: i.price,
           nom: i.nom 
         }))
-         if (compAlive) {setAllproducts(safeItems)}
-
+        {setAllproducts(safeItems)}
 
       } catch(e){
-        if (compAlive){
           setErr(" Appel d'API échoué")
-        }
+        
       } finally {
         setLoading(false)
       }
     }, 250)
-    return () => { compAlive= false, controllers.abort(), setTimeout(t) }
+    return () => { controllers.abort(); clearTimeout(t) }
   }, [params])  
-  const categories = useMemo(() => {getCategories(products)}, [products])
+
+  const categories = useMemo(() => getCategories(products), [products])
 
   const resetFilter = () => {
     setMinPrice(0)
-    setMaxPrice(50)
-    setCategory("Trié par défault")
+    setMaxPrice(100)
+    setCategory("toutes")
   }
 
   if (loading) return <main className="min-h-screen p-8">Chargement…</main>;
@@ -113,14 +107,14 @@ export default function Home() {
               <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}>
-              {categories.map((c) => {
-              <option key={c.id}>{c.nom} </option>
-            })}
+              {categories.map((c) => (
+              <option key={c} >{c} </option>
+            ))}
             </select>
           </label>
           <label className="">
             <input
-            type="Number"
+            type="number"
             placeholder="Entez un chiffre"
             value={minPrice}
             onChange={(e) => setMinPrice(e.target.value)}
@@ -129,7 +123,7 @@ export default function Home() {
           </label>
           <label className="">
             <input
-              type="Number"
+              type="number"
               placeholder="Entez un chiffre"
               value={maxPrice}
               onChange={(e) => setMaxPrice(e.target.value)}
@@ -139,10 +133,10 @@ export default function Home() {
 
             <label className="">
               <span className="">Trier par :</span>
-              <select className="">
-                <option className="" value={"Default"}>Défault</option>
-                <option className="" value={"asc"}>Croissant</option>
-                <option className="" value={"desc"}>Décoissant</option>
+              <select className="" value={sort} onChange={((e)=> setSort(e.target.value) )}>
+                <option className="" value="default" >Défault</option>
+                <option className="" value="asc">Croissant</option>
+                <option className=""value="desc" >Décoissant</option>
               </select>
             </label>
             <label className="">
@@ -155,16 +149,23 @@ export default function Home() {
         <section id="products" className="">
           <span className=""> Nos produits </span>
           {products.map((p) => (
-            <article key={p.id} className="">
-              <img src={p.products} alt={p.nom} ></img>
+            <Link key={p.id} href={`/products/${p.slug}`}>
+            <article className="">
+              <Image
+                src={p.images.secure_url}
+                alt={p.nom}
+                width={400}
+                height={400}
+              />
               <div className="">
                 <span className=""> {p.price}</span>
                 <span className=""> {p.category} </span>
                 <span className=""> {p.nom}</span>
                 <span className=""> {p.shortDesc} </span>
-                <Link href={`/products/${p.slug}`}></Link>
               </div>
             </article>
+            </Link>
+
           ))}
         </section>
           {products.length === 0 &&(
