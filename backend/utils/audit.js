@@ -1,4 +1,4 @@
-import AuditsEvents from "../models/AuditsEvents"
+import AuditsEvents from "../models/AuditEvents.js"
 
 export default async function audit(req, payload){
     const base = {

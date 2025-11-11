@@ -59,7 +59,7 @@ export default function Home() {
 
             setMeta(metaFromApi);
 
-        const safeItems = res?.data.items.map((i) => ({
+        const safeItems = res?.data?.items.map((i) => ({
           id: i.id || i._id,
           shortDesc: i.shortDesc,
           slug : i.slug,
@@ -71,8 +71,10 @@ export default function Home() {
         {setAllproducts(safeItems)}
 
       } catch(e){
-          setErr(" Appel d'API échoué")
-        
+          setErr(e)
+        console.error('GET /products failed:', e);
+        console.log('API_URL =', process.env.NEXT_PUBLIC_API_URL);
+
       } finally {
         setLoading(false)
       }
@@ -152,7 +154,7 @@ export default function Home() {
             <Link key={p.id} href={`/products/${p.slug}`}>
             <article className="">
               <Image
-                src={p.images.secure_url}
+                  src={typeof p.images === 'string' ? p.images : (p.images?.secure_url ?? '/placeholder.png')}
                 alt={p.nom}
                 width={400}
                 height={400}

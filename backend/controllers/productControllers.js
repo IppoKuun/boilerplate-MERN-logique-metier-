@@ -1,11 +1,11 @@
-import { queryBuilder } from "../utils/queryBuilder"
-import {pagination, buildMeta} from "../utils/pagination";
-import Product from "../models/product"
-import buildSafePatch from "../utils/sanitize";
-import audit from "../utils/audit"
+import { queryBuilder } from "../utils/queryBuilder.js"
+import {pagination, buildMeta} from "../utils/pagination.js";
+import Product from "../models/product.js"
+import buildSafePatch from "../utils/sanitize.js";
+import audit from "../utils/audit.js"
 
 
-export default async function list(req, res){
+async function list(req, res){
 
   const {filter, sortBy, order } = queryBuilder(req.query,{
     equals: new Set ([ "nom", "category", "slug" ]),
@@ -16,8 +16,8 @@ export default async function list(req, res){
     const {page, limit, skip} = pagination(req.query, 
     {defaultLimit : 20, maxLimit : 100, defaultPage : 1})
     
-    const {items, total} = await Promise.all([
-      Product.find(filter).sort(sort).skip(skip).limit(limit).lean(),
+    const [items, total] = await Promise.all([
+      Product.find(filter).sort(sortBy).skip(skip).limit(limit).lean(),
       Product.countDocuments(filter)
     ])
   const meta = buildMeta({ page, limit, total, sortBy, order})
@@ -88,7 +88,7 @@ async function getProductBySlug(req, res) {
   return res.status(200).json(doc);
 }
 
-export {
+export default {
   updateProduct,
   deleteProduct,
   postProduct,

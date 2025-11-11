@@ -1,7 +1,7 @@
 import { Router } from "express";
-import login from "../controllers/auth/login";
-import logout from "../controllers/auth/logout";
-import {loginRateLimiter} from  "../middlewares/rateLimits";
+import login from "../controllers/auth/login.js";
+import logout from "../controllers/auth/logout.js";
+import {loginRateLimiter} from  "../middlewares/rateLimits.js";
 
 export const authRouter = Router()
 

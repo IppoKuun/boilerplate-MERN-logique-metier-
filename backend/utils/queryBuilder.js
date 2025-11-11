@@ -27,7 +27,7 @@ function setRanges(query, champ){
 }
 
 
-    export default function queryBuilder(){
+    export function queryBuilder(){
         const query = {}, 
         {
             allowedSort = DEFAULT_ALLOWED_SORT,

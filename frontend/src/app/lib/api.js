@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BaseURL = process.env.NEXT_PUBLIC_BACKEND_URL_DEV || process.env.NEXT_PUBLIC_BACKEND_URL_PROD
+const BaseURL = process.env.NEXT_PUBLIC_API_URL_DEV || process.env.NEXT_PUBLIC_API_URL_PROD
 
 const api = axios.create({
   baseURL: BaseURL,
@@ -10,13 +10,14 @@ const api = axios.create({
 
 
 api.interceptors.request.use((config) => {
-   config.headers = config.headers || {}
+  config.headers = config.headers || {}
 
   const haveFormData = (config.data instanceof FormData)
-  if (config.data && !haveFormData && !config.headers["Content-Type"]){
-    config.headers = ["Content-Type"] = "application/json";
+  if (config.data && !haveFormData && !config.headers['Content-Type']) {
+    config.headers['Content-Type'] = "application/json";
   }
-      return config
+
+  return config
 })
 
 api.interceptors.response.use((res) => {

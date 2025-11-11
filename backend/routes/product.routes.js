@@ -1,10 +1,10 @@
 import {Router} from "express"
-import requireAuth from "../middlewares/requireAuth";
-import * as productControllers from "../controllers/productControllers"
-import validate from "../middlewares/validate";
-import productValidator from "../middlewares/product.validator";
+import requireAuth from "../middlewares/requireAuth.js";
+import productControllers from "../controllers/productControllers.js"
+import validate from "../middlewares/validate.js";
+import productValidator from "../middlewares/product.validator.js";
 
-const { productQuery, productBase, updateVehicleBody, idParam } = productValidator
+const { productQuery, productBase, updateProductBody, idParam } = productValidator
 
 export const productRouter = Router()
 
@@ -16,18 +16,6 @@ productRouter.get("/slug/:slug", productControllers.getProductBySlug);
 
 productRouter.post("/", validate({body: productBase}), requireAuth(["owner", "admin"]),  productControllers.postProduct)
 
-productRouter.patch("/:id", validate({ body: updateVehicleBody }) ,requireAuth(["owner", "admin"]) ,productControllers.updateProduct )
+productRouter.patch("/:id", validate({ body: updateProductBody }) ,requireAuth(["owner", "admin"]) ,productControllers.updateProduct )
 
 productRouter.delete("/:id", validate({params: idParam }), requireAuth(["owner", "admin"]),  productControllers.deleteProduct)
-
-productRouter.get("/count", async (req, res) => {
-  try {
-    const count = await Product.estimatedDocumentCount();
-    res.json({ count });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ message: "Unable to count products" });
-  }
-});
-
-

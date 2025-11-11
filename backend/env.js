@@ -65,7 +65,7 @@ export const config = Object.freeze ({
     PORT,
     TRUST_PROXY,
     MONGO:{
-        Url: RAW.MONGO_Url || "mongodb://127.0.0.1:27017/mon_bo" },
+        Url: RAW.MONGO_Url},
         
     session: {
     secret: RAW.SESSION_SECRET || "dev-only-please-change",

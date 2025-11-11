@@ -6,25 +6,24 @@ import helmet from "helmet"
 import config from "./env.js"
 import session from "express-session"
 import MongoStore from "connect-mongo"
-import auditRouter from "./routes/auditRoutes.js"
-import productRouter from "./routes/product.routes.js"
+import {auditRouter} from "./routes/auditRoutes.js"
+import {productRouter} from "./routes/product.routes.js"
 
-async function connectMongo(){
-const Url = config.MONGO.Url
-    await mongoose.connect(Url, {
-        serverSelectionTimeoutMS: 10_000,
-    })
+const MONGO_URL = process.env.MONGO_URL; // ou ta config
+const PORT = process.env.PORT || 4000;
 
-  mongoose.connection.on("connected", () => {
-    console.log(`[db] Connected to Mongo `);
-  });
-  mongoose.connection.on("error", (err) => {
-    console.error("[db] Mongo connection error:", err?.message || err);
-  });
-  mongoose.connection.on("disconnected", () => {
-    console.warn("[db] Mongo disconnected");
-  });
+// logs utiles
+mongoose.connection.on("connected", () => console.log("[db] connected event"));
+mongoose.connection.on("error", (err) => console.error("[db] error event:", err));
+mongoose.connection.on("disconnected", () => console.warn("[db] disconnected"));
+
+async function connectMongo() {
+  if (!MONGO_URL) throw new Error("MONGO_URL manquant");
+  console.log("[db] Connecting to", MONGO_URL.replace(/:\/\/[^@]+@/, "://***:***@"));
+  await mongoose.connect(MONGO_URL, { serverSelectionTimeoutMS: 10000 });
+  console.log("[db] Connected to Mongo"); // 👈 ce log doit apparaître AVANT le listen
 }
+
 const app = express()
 
 app.post("/api/cloudinary/sign", (req, res) => {
@@ -37,9 +36,8 @@ app.post("/api/cloudinary/sign", (req, res) => {
 });
   
 
-app.use("/api/product", productRouter)
-app.use("/api/audits", auditRouter)
-app.use(checkOrigin);
+app.use("/product", productRouter)
+app.use("/audits", auditRouter)
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 app.use(helmet({ contentSecurityPolicy: false }));
@@ -50,9 +48,9 @@ if (config.TRUST_PROXY){app.set("trust proxy", config.TRUST_PROXY)}
 
 //On Store la session dans la DB comme le cookies//
 const mongoSession = MongoStore.create({
-    mongoUrl : config.MONGO_Url,
-    ttl: Math.floor(config.cookie.maxAge.SESSION_MAX_AGE_MS/1000)
-})
+  mongoUrl: config.MONGO.Url, 
+  ttl: config.session.cookie.maxAge / 1000
+});
 
 app.use(helmet({
   frameguard: { action: 'sameorigin' },

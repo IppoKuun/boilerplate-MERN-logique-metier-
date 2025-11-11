@@ -1,7 +1,7 @@
 import { Router } from "express";
-import AuditsEvents from "../models/AuditsEvents";
-import {pagination, buildMeta} from "../utils/pagination"
-import queryBuilder from "../utils/queryBuilder"
+import AuditEvents from "../models/AuditEvents.js";
+import {pagination, buildMeta} from "../utils/pagination.js"
+import {queryBuilder} from "../utils/queryBuilder.js"
 
 export const auditRouter = Router()
 
@@ -15,8 +15,8 @@ auditRouter.get("/",   async(req, res) => {
             const {page, limit, skip} =  pagination(req.query, { defaultLimit: 50, maxLimit: 200 });
 
             const [items, total] = await Promise.all([
-            AuditsEvents.find(filter).sort(sort).skip(skip).limit(limit).lean(),
-            AuditsEvents.countDocuments(filter)
+            AuditEvents.find(filter).sort(sort).skip(skip).limit(limit).lean(),
+            AuditEvents.countDocuments(filter)
         ])
           res.json({ items, meta: buildMeta({ page, limit, total, sortBy, order }) });
     })
