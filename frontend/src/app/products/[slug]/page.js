@@ -1,13 +1,13 @@
 // src/app/products/[slug]/page.js
 import { notFound } from "next/navigation";
 import Image from "next/image"; // utile si tu gardes des images statiques (logo, etc.)
-import GalleryClient from "@/components/GalleryClient"; // <-- adapte le chemin
+import GalleryClient from "@/app/products/[slug]/galerryClients.js"; 
 export const revalidate = 60;
 
 /** Récupération d'un produit par slug (SSR/SSG avec revalidate) */
 async function getProductBySlug(slug) {
   const res = await fetch(
-    `http://localhost:4000/backend/products/${encodeURIComponent(slug)}`,
+    `http://localhost:4000/products/slug/${encodeURIComponent(slug)}`,
     { next: { revalidate: 60 } }
   );
 
@@ -34,18 +34,17 @@ function toUrls(images) {
   return images
     .map((x) => {
       if (typeof x === "string") return x;
-      // différents cas d’objets (Cloudinary)
       return x?.url || x?.secure_url || null;
     })
     .filter(Boolean);
 }
 
 export default async function ProductPage({ params }) {
-  const { slug } = params;
+  const { slug } = await params;
   const product = await getProductBySlug(slug);
 
   const {
-    nom = "",
+    name = "",
     images = [],
     category = "",
     price = 0,
@@ -61,12 +60,12 @@ export default async function ProductPage({ params }) {
       <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Galerie */}
         <div>
-          <GalleryClient images={imageUrls} alt={nom || "Produit"} />
+          <GalleryClient images={imageUrls} alt={name || "Produit"} />
         </div>
 
         {/* Infos produit */}
         <div className="space-y-4">
-          <h1 className="text-2xl md:text-3xl font-semibold">{nom}</h1>
+          <h1 className="text-2xl md:text-3xl font-semibold">{name}</h1>
           {category && <div className="text-sm text-gray-500">{category}</div>}
           <div className="text-xl font-bold">{formatPrice(price)}</div>
           {shortDesc && <p className="text-gray-700">{shortDesc}</p>}

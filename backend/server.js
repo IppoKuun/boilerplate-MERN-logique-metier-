@@ -8,8 +8,11 @@ import session from "express-session"
 import MongoStore from "connect-mongo"
 import {auditRouter} from "./routes/auditRoutes.js"
 import {productRouter} from "./routes/product.routes.js"
+import { authRouter } from "./routes/auth.routes.js"
+import cors from "cors";
+import crypto from "crypto";
 
-const MONGO_URL = process.env.MONGO_URL; // ou ta config
+const MONGO_URL = process.env.MONGO_Url || config.MONGO.Url;
 const PORT = process.env.PORT || 4000;
 
 // logs utiles
@@ -26,25 +29,22 @@ async function connectMongo() {
 
 const app = express()
 
-app.post("/api/cloudinary/sign", (req, res) => {
-  const { folder } = req.body;
-  const timestamp = Math.round(new Date().getTime() / 1000);
-  const paramsToSign = `timestamp=${timestamp}${folder ? `&folder=${folder}` : ""}${process.env.CLOUDINARY_API_SECRET}`;
-  const signature = crypto.createHash("sha1").update(paramsToSign).digest("hex");
+app.use(cors({
+  origin: "http://localhost:3000",
+  credentials: true
+}));
+app.use(express.json());
+app.options("*", cors({ origin: "http://localhost:3000", credentials: true }));
 
-  res.json({ timestamp, signature, folder });
-});
-  
-
-app.use("/product", productRouter)
-app.use("/audits", auditRouter)
+app.use(express.json({ limit: "1mb" }));
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
-app.use(helmet({ contentSecurityPolicy: false }));
 
-
-//Si TRUST Proxy existe on l'utilise///
 if (config.TRUST_PROXY){app.set("trust proxy", config.TRUST_PROXY)}
+
+
+  
+//Si TRUST Proxy existe on l'utilise///
 
 //On Store la session dans la DB comme le cookies//
 const mongoSession = MongoStore.create({
@@ -57,6 +57,7 @@ app.use(helmet({
   contentSecurityPolicy: false, // On configure manuellement si besoin
   xContentTypeOptions: true, // nosniff activé
 }));
+
 
 app.use(
     session({
@@ -75,9 +76,47 @@ app.use(
     })
 )
 
+app.use("/products", productRouter)
+app.use("/auth", authRouter)
+app.use("/audits", auditRouter)
+app.post("/cloudinary/sign", (req, res) => {
+  const { folder } = req.body;
+  const timestamp = Math.round(Date.now() / 1000);
+
+  const params = new URLSearchParams();
+  if (folder) params.append("folder", folder);
+  params.append("timestamp", timestamp);
+
+  const toSign = `${params.toString()}${process.env.CLOUDINARY_API_SECRET}`;
+  const signature = crypto.createHash("sha1").update(toSign).digest("hex");
+
+  res.json({ timestamp, signature, folder, apiKey: process.env.CLOUDINARY_API_KEY });
+});
+
+
+
 app.get("/health", (req, res) => {
-    res.json({ok: true, env:config.env, db:mongoose.connection.readyState === 1 ?"up" : "down" })
-})
+  const state = mongoose.connection.readyState; // 0..3
+  const labels = { 0: "disconnected", 1: "connected", 2: "connecting", 3: "disconnecting" };
+  const dbStatus = labels[state] ?? "unknown";
+  const ok = state === 1;
+
+  console.log(`[HEALTH CHECK] ${new Date().toISOString()} | DB: ${dbStatus} (${state}) | ENV: ${config.env}`);
+
+  res.status(ok ? 200 : 503).json({
+    ok,
+    env: config.env,
+    db: dbStatus,
+    readyState: state,
+    time: new Date().toISOString(),
+  });
+});
+
+import { loginRateLimiter } from "./middlewares/rateLimits.js"
+import login from "./controllers/auth/login.js"
+app.post("/auth/login", loginRateLimiter, login)
+
+
 
 app.use((req, res) => res.status(404).json({ error: "Not Found" }));
 app.use((err, req, res, next) => {
@@ -92,7 +131,6 @@ app.use((err, req, res, next) => {
   res.status(status).json(payload);
     })
 
-
 async function start(){
     try{
         await connectMongo();
@@ -106,7 +144,6 @@ async function start(){
     process.exit(1);
   }
 }
-
   start();
 
 

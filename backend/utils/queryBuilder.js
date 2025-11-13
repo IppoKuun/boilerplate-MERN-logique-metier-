@@ -5,9 +5,11 @@ const toNum = (v) => {
 };
 
 // A REMPLIR SELON LES CHAMPS DU SCHEMA !!!!
-const DEFAULT_ALLOWED_SORT = new Set ([])
-const DEFAULT_EQUALS = new Set ([])
-const DEFAULT_RANGES = new Set ([])
+const DEFAULT_ALLOWED_SORT = new Set (["price", "createdAt", "updatedAt", 
+  "ts", "actor.user", "target.slug", "event"])
+const DEFAULT_EQUALS = new Set (["category", "slug", "name", "event", 
+  "target.slug", "target.id", "actor.user", "actor.role", "actor.id", "CorrelationId"])
+const DEFAULT_RANGES = new Set (["price", "createdAt", "updatedAt", "ts", "diff.size"])
 
 function setRanges(query, champ){
     const obj = query?.[champ]
@@ -19,36 +21,32 @@ function setRanges(query, champ){
     toNum(query?.[`${champ}[max]`]) ??
     toNum(query?.[`${champ}.max`]);
 
-    const out ={}
-
-    out.$gte = min
-    out.$lte = max
+  const out = {};
+  if (min !== undefined) out.$gte = min;
+  if (max !== undefined) out.$lte = max;
     return Object.keys(out).length ? out: undefined
 }
 
 
-    export function queryBuilder(){
-        const query = {}, 
-        {
-            allowedSort = DEFAULT_ALLOWED_SORT,
-            equals = DEFAULT_EQUALS,
-            ranges = DEFAULT_RANGES,
-        } = {}
+export function queryBuilder(query = {}, {
+  allowedSort = DEFAULT_ALLOWED_SORT,
+  equals = DEFAULT_EQUALS,
+  ranges = DEFAULT_RANGES,
+} = {}) {
+  const filter = {};
+  for (const field of equals) {
+    const value = query[field];
+    if (value !== undefined && value !== "") filter[field] = value;
+  }
+  for (const field of ranges) {
+    const range = setRanges(query, field);
+    if (range) filter[field] = range;
 
-      filter = {}
+  }
 
-    for (const c in equals){
-      if ( query[c] !== null && query[c] !== "" ) filter[c] = query[c]
-    }
+  const sortBy = allowedSort.has(String(query.sortBy)) ? query.sortBy : "ts";
+  const order = query.order?.toLowerCase() === "asc" ? 1 : -1;
+  const sort = { [sortBy]: order };
 
-    for ( const c in ranges ) {
-      const ranges = setRanges(query, c)
-      if (ranges) filter[c] = ranges
-    }    
-  
-
-  const sortBy = allowedSort.has(String(req.query.sortBy)) ? req.query.sortBy : "createdAt"
-  const order = req.query.order?.toLowerCase() === "desc" ? -1 : 1 
-  const sort= {sortBy:[order]}
-  return {sort, sortBy, order }
+  return { filter, sort, sortBy, order };
 }

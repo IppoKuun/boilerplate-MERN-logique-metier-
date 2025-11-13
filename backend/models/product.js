@@ -3,13 +3,13 @@ import slugify from 'slugify';
 
 
 const imageSchema = new mongoose.Schema({
-  public_id: { type: String, required: true },
-  url:       { type: String, required: true },
+  public_id: { type: String },
+  url:       { type: String },
   alt:       { type: String, default: "" },
 });
 
 const productSchema = new mongoose.Schema({
-  nom: { required: true, type: String, trim: true },
+  name: { required: true, type: String, trim: true },
   description: { required: true, type: String },
   shortDesc: { required: true, type: String },
   price: { required: true, type: Number },
@@ -20,8 +20,8 @@ const productSchema = new mongoose.Schema({
 }, { timestamps: true });
 
     productSchema.pre('validate', async function (next) {
-    if (!this.slug && this.nom) {
-        const base = slugify(this.nom, { lower: true, strict: true, locale: 'fr' });
+    if (!this.slug && this.name) {
+        const base = slugify(this.name, { lower: true, strict: true, locale: 'fr' });
         let candidate = base;
         let i = 2;
 
@@ -33,7 +33,7 @@ const productSchema = new mongoose.Schema({
     }
     next();
     });
-productSchema.index({ nom: 1 });
+productSchema.index({ name: 1 });
 productSchema.index({ price: 1 });
 productSchema.index({ category: 1 });
 

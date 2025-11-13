@@ -8,7 +8,7 @@ import audit from "../utils/audit.js"
 async function list(req, res){
 
   const {filter, sortBy, order } = queryBuilder(req.query,{
-    equals: new Set ([ "nom", "category", "slug" ]),
+    equals: new Set ([ "name", "category", "slug" ]),
     ranges: new Set([ "price" ]),
     allowedSort: new Set (["price"]),
   })
@@ -36,7 +36,7 @@ async function getProduct(req, res){
     const newProduct = await Product.create(req.body)
     
     if (!newProduct) {
-      return res.status(400).json({ message: "Création échouée" });
+      return res.status(400).json({ message: "Création échouée"});
     }
         await audit(req, {
           event : "product.create",
@@ -46,7 +46,11 @@ async function getProduct(req, res){
             slug: newProduct.slug,
           } 
         })
-      return res.status(201).json({message: "Produit ajoutez avec succées"})
+
+          const productPayload = typeof newProduct.toObject === "function"
+      ? newProduct.toObject()
+      : newProduct;
+      return res.status(201).json({message: "Produit ajoutez avec succées", product: productPayload})
     }
   
 
@@ -67,7 +71,7 @@ async function deleteProduct(req, res){
 
   async function  updateProduct(req, res){
   const id = req.params.id
-  const allowedPart = buildSafePatch(req.body, ["nom", "description", "price", "category", "slug",
+  const allowedPart = buildSafePatch(req.body, ["name", "description", "price", "category", "slug",
     "shortDesc", "images", "isActive",]);
   const updProduct = await Product.findByIdAndUpdate(id, allowedPart, {new:true})
     if (!updProduct){ return res.status(404).json({message: "Produit introuvable"})}

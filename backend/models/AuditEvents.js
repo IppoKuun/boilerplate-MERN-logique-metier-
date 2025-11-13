@@ -6,9 +6,11 @@ const AuditEventSchema = new Schema({
     ts : {type: Date, default : () => Date.now(), index:true,},
     event : { type: String, required: true, index:true},
     target : {
-        type: String,
+        type:{
+        type: String},
         slug: String,
         id:String
+        
     },
     actor: { 
         user:String, 

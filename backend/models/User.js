@@ -34,12 +34,11 @@ const userSchema = new Schema({
     },
 
     status:{
+        type: String,
         enum:["active", "suspendu"],
         default:"active"
     },
     lastLoginAt:{type:Date, default:null },
-
-    createdAt:{type: String.ObjectID}
 }, {
     timestamps:true,
     versionKey:false,
@@ -53,12 +52,12 @@ const userSchema = new Schema({
 
 //JSP SI UTILE MTN OU PAS A VOIR AVEC COMMENT ON CREEER NV UTILISATEUR ETC//
 
-userSchema.method.setPassword = async function (plain){
+userSchema.methods.setPassword = async function (plain){
     this.passwordHash = await hashPassword(plain)
 }
 
 //Renvoie ce que l'user as tapé si le plain et hash bien la meme chose.//
-userSchema.method.checkPassword = async function (plain){
+userSchema.methods.checkPassword = async function (plain){
     if(!this.passwordHash)
         throw new Error ("IL NYA PAS DE MDP HASHE ")
     return verifyPassword(plain, this.passwordHash)

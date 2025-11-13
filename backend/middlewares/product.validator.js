@@ -1,12 +1,13 @@
+// back/middlewares/product.validator.js
 import Joi from "joi";
 
-const allowedCat = [
-  "electronics", "fashion", "home", "beauty", "sports",
-  "toys", "automotive", "books", "groceries", "health",
-  "office", "garden", "music", "video_games"
+export const allowedCat = [
+  "electronics","fashion","home","beauty","sports",
+  "toys","automotive","books","groceries","health",
+  "office","garden","music","video_games", "clothes"
 ];
 
-export const PRODUCT_SORTABLE_FIELDS = ["price", "createdAt", "updatedAt", "nom"];
+export const PRODUCT_SORTABLE_FIELDS = ["price","createdAt","updatedAt","name"];
 
 const posInt = Joi.number().integer().min(1);
 
@@ -14,43 +15,48 @@ const ranges = Joi.object({
   min: Joi.number(),
   max: Joi.number()
 }).custom((v, h) => {
-  if (v?.min !== undefined && v?.max !== undefined && Number(v.min) > Number(v.max)) {
-    return h.error("any.invalid");
+  if (v?.min != null && v?.max != null && v.min > v.max) {
+    return h.error("any.invalid", { message: "min cannot be greater than max" });
   }
   return v;
 });
 
-const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/; // À ajouter si pas défini ailleurs
-
-const productQuery = Joi.object({
-  nom: Joi.string().required().trim(), // CORRIGÉ ICI
-  slug: Joi.string().required().trim().pattern(slugRegex),
-  price: ranges,
-  q: Joi.string().max(220).trim(),
-  category: Joi.string().required().valid(...allowedCat),
-  sortBy: Joi.string().valid(...PRODUCT_SORTABLE_FIELDS).default("createdAt"),
-  order: Joi.string().valid("asc", "desc").default("desc"),
+// ✅ Schéma de QUERY pour GET /products (tous optionnels)
+export const productQuery = Joi.object({
   page: posInt.default(1),
   limit: posInt.max(100).default(20),
+  q: Joi.string().allow("").optional(),
+  sortBy: Joi.string().valid(...PRODUCT_SORTABLE_FIELDS).default("createdAt"),
+  order: Joi.string().valid("asc","desc").default("desc"),
+  price: ranges.optional(),
+  category: Joi.alternatives().try(
+    Joi.string().valid(...allowedCat),
+    Joi.array().items(Joi.string().valid(...allowedCat))
+  ).optional(),
+  isActive: Joi.boolean().optional(),
+  minPrice: Joi.number().min(0),
+  maxPrice: Joi.number().min(0),
 }).unknown(false);
 
-const money = Joi.number().positive().precision(2); // À définir
+// ✅ Schéma de BODY pour POST/PUT/PATCH (champs « métier »)
+export const productBase = Joi.object({
+  name: Joi.string().min(1).max(200).required(),
+  description: Joi.string().allow("").default(""),
+  price: Joi.number().min(0).required(),
+  category: Joi.string().valid(...allowedCat).required(),
+  slug: Joi.string().min(1),
+  shortDesc: Joi.string().allow("").default(""),
+  images: Joi.array().items(Joi.object().unknown(true)),
 
-const CATEGORY_LIST = allowedCat; // À vérifier que c'est bien défini
+  isActive: Joi.boolean().default(true),
+}).unknown(false);
 
-const productBase = Joi.object({
-  nom: Joi.string().trim().lowercase().min(1).max(120),
-  description: Joi.string().trim().max(5000),
-  shortDesc: Joi.string().trim().max(280),
-  slug: Joi.string().trim().lowercase().pattern(slugRegex),
-  price: money,
-  category: Joi.array().items(Joi.string().valid(...CATEGORY_LIST)).min(1).unique(),
-  isActive: Joi.boolean(),
-  images: Joi.array().items(Joi.string().uri()),
-});
 
+
+// PATCH: au moins 1 champ
 export const updateProductBody = productBase.min(1).unknown(false);
 
+// :id params
 export const idParam = Joi.object({
   id: Joi.string().length(24).hex().required(),
 }).unknown(false);
