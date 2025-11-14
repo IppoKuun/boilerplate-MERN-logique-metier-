@@ -14,7 +14,7 @@ const productSchema = new mongoose.Schema({
   shortDesc: { required: true, type: String },
   price: { required: true, type: Number },
   category: { required: true, type: String, lowercase: true },
-    images:     { type: [imageSchema], default: [] }, // 👈 ici le champ images
+    images:     { type: [imageSchema], default: [] }, 
   isActive: { type: Boolean, required: true },
   slug: { type: String, required: true, unique: true, index: true, trim: true, lowercase: true },
 }, { timestamps: true });

@@ -35,8 +35,8 @@ export default function Home() {
   const params = useMemo(() => {
     const p= {}
     if (category && category !== "toutes") p.category = category;
-    if (minPrice !== "") p.minPrice = Number(minPrice);
-    if (maxPrice !== "") p.maxPrice = Number(maxPrice);
+    if (minPrice !== "") p['price[min]']  = Number(minPrice);
+    if (maxPrice !== "") p['price[max]'] = Number(maxPrice);
     if (sort === "asc" || sort === "desc") {
       p.sortBy = "price";
       p.order = sort;
@@ -70,6 +70,7 @@ export default function Home() {
         console.log("CLOUD NAME =>", process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME);
 
       } catch (e) {
+        if (e?.canceled) return;
         console.error("GET /products failed:", e);
         const msg = e?.msg || e?.message || e?.data?.error || "Network error";
         setErr(msg);
@@ -112,7 +113,7 @@ export default function Home() {
       {/* Top bar */}
       <header className="container mx-auto flex items-center justify-between px-4 py-4">
         <div className="flex items-center gap-3">
-          <Image src={logo} alt="NodeShop" className="h-10 w-auto" priority />
+          <Image src={logo} alt="NodeShop" className="h-50 w-auto" priority />
           <span className="sr-only">NodeShop</span>
         </div>
         <Link
@@ -144,11 +145,7 @@ export default function Home() {
             </button>
           </div>
 
-          <div className="order-1 flex justify-center md:order-2">
-            <div className="relative rounded-2xl border border-brand-100 bg-white p-5 shadow-sm dark:border-brand-900/40 dark:bg-slate-900">
-              <Image src={logo} alt="NodeShop" className="h-28 w-auto" />
-            </div>
-          </div>
+
         </section>
 
         {/* Filtres */}

@@ -7,17 +7,17 @@ import audit from "../utils/audit.js"
 
 async function list(req, res){
 
-  const {filter, sortBy, order } = queryBuilder(req.query,{
+  const {filter, sortBy, sort, order } = queryBuilder(req.query,{
     equals: new Set ([ "name", "category", "slug" ]),
     ranges: new Set([ "price" ]),
-    allowedSort: new Set (["price"]),
+    allowedSort: new Set (["price", "createdAt", "updatedAt", "name", "ts"]),
   })
 
     const {page, limit, skip} = pagination(req.query, 
     {defaultLimit : 20, maxLimit : 100, defaultPage : 1})
     
     const [items, total] = await Promise.all([
-      Product.find(filter).sort(sortBy).skip(skip).limit(limit).lean(),
+      Product.find(filter).sort(sort).skip(skip).limit(limit).lean(),
       Product.countDocuments(filter)
     ])
   const meta = buildMeta({ page, limit, total, sortBy, order})

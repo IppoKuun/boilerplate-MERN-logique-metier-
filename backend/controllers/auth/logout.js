@@ -1,3 +1,6 @@
+import config from "../../env.js"
+
+
 export default async function logout(req, res) {
   const sessName = config?.session?.sessionName || "sid";
   const c = config?.session?.cookie || {};

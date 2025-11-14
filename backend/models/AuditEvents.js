@@ -2,16 +2,14 @@ import mongoose from "mongoose"
 
 const { Schema } = mongoose
 
+const targetSchema = new Schema(
+  { type: String, slug: String, id: String },
+  { _id: false }
+);
 const AuditEventSchema = new Schema({
     ts : {type: Date, default : () => Date.now(), index:true,},
     event : { type: String, required: true, index:true},
-    target : {
-        type:{
-        type: String},
-        slug: String,
-        id:String
-        
-    },
+    target : targetSchema,
     actor: { 
         user:String, 
         ip:String, 
@@ -20,7 +18,7 @@ const AuditEventSchema = new Schema({
         ua : String
     }, 
     diff:  Schema.Types.Mixed,
-    CorrelationId: String,
+    correlationId: String,
 }, {versionKey : false} )
 
 AuditEventSchema.index({"actor.user" : 1, ts:-1})

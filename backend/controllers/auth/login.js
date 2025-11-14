@@ -12,14 +12,13 @@ export default async function login (req, res, next) {
 
     // User lookup
     const user = await User.findOne({ username })
-      .select("+username +passwordHash +isActive +role +displayName +status")
+      .select("+username +passwordHash +role +displayName +status")
 
     // Harmonise ta logique d'état:
-    const isSuspended = user?.status === "suspendu"
-    const isInactive = user?.isActive === false
-    if (!user || isSuspended || isInactive) {
-      return res.status(400).json({ error: AUTH_ERR.err })
-    }
+      if (!user || user.status === "suspendu") {
+        return res.status(400).json({ error: AUTH_ERR.err })
+      }
+
 
     const ok = await user.checkPassword(password)
     if (!ok) return res.status(400).json({ error: AUTH_ERR.err })

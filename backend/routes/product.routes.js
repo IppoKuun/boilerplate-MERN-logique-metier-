@@ -18,8 +18,6 @@ productRouter.get("/:id", validate({ params: idParam }), productControllers.getP
 
 productRouter.get("/", validate({query : productQuery}), productControllers.list)
 
-productRouter.get("/:id", validate({params : idParam}), productControllers.getProduct)
-
 productRouter.get("/slug/:slug", productControllers.getProductBySlug);
 
 productRouter.post(
@@ -34,6 +32,9 @@ productRouter.post(
 );
 
 
-productRouter.patch("/:id", validate({ body: updateProductBody }) ,requireAuth(["owner", "admin"]) ,productControllers.updateProduct )
+productRouter.patch("/:id", validate(
+    { body: updateProductBody },
+    { allowedPaths: ["name","description","shortDesc","price","category","slug","images","isActive"] }
+  ) ,requireAuth(["owner", "admin"]) ,productControllers.updateProduct )
 
 productRouter.delete("/:id", validate({params: idParam }), requireAuth(["owner", "admin"]),  productControllers.deleteProduct)

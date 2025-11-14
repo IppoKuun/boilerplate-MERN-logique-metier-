@@ -3,7 +3,13 @@ import api from "@/app/lib/api"
 import { useEffect, useState } from "react"
 import Image from "next/image"
 
-
+    const formatDate = (value) => {
+    if (!value) return "—";
+    return new Intl.DateTimeFormat("fr-FR", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(new Date(value));
+  };
 export default function DashboardPage(){
   const [recentProducts, setRecentProducts] = useState([])
   const [recentAudits, setRecentsAudits] = useState([])
@@ -26,7 +32,7 @@ export default function DashboardPage(){
             signal: controller.signal
           }),
           api.get("/audits", {
-            params: { limit: 5, sortBy: "createdAt", order: "desc" },
+            params: { limit: 5, sortBy: "ts", order: "desc" },
             signal: controller.signal
           }),
         ])
@@ -124,9 +130,9 @@ export default function DashboardPage(){
                 <span className="px-2 py-0.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs">
                   {a?.event}
                 </span>
-                <span className="text-slate-700 dark:text-slate-300">{a.events}</span>
-                <span className="text-slate-500">{a.ts}</span>
-                <span className="text-slate-500">{a.user}</span>
+                <span className="text-slate-700 dark:text-slate-300">{a.target?.slug ?? a.target?.type?.slug }</span>
+                <span className="text-slate-500">{formatDate(a.ts)}</span>
+                <span className="text-slate-500">De :{a.actor?.user}</span>
               </li>
             ))}
           </ul>

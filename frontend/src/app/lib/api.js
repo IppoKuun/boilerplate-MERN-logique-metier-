@@ -29,11 +29,14 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Interceptor Response
 api.interceptors.response.use(
   (res) => res.data,
-
   (err) => {
+    // Ignorer proprement les requêtes annulées
+    if (err?.code === 'ERR_CANCELED' || err?.name === 'CanceledError') {
+      return Promise.reject({ canceled: true });
+    }
+
     const msg =
       err.response?.data?.message ||
       err.response?.data?.error ||
@@ -43,7 +46,6 @@ api.interceptors.response.use(
     const status = err.response?.status;
     const data = err.response?.data;
 
-    // En dev : log détaillé
     if (isDev) {
       console.error("[AXIOS ERROR]", {
         status,
@@ -57,6 +59,7 @@ api.interceptors.response.use(
     return Promise.reject({ msg, status, data });
   }
 );
+
 
 // Méthodes utilitaires
 const get = (url, config) => api.get(url, config);

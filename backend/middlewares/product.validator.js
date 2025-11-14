@@ -53,8 +53,12 @@ export const productBase = Joi.object({
 
 
 
-// PATCH: au moins 1 champ
-export const updateProductBody = productBase.min(1).unknown(false);
+
+export const updateProductBody = productBase
+  .fork(['name','price','category'], (s) => s.optional())
+  .min(1)
+  .unknown(false);
+
 
 // :id params
 export const idParam = Joi.object({

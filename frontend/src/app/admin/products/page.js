@@ -41,7 +41,7 @@ export default function ProductsAdminPage () {
       if (sort === "price-asc")  { sortBy = "price"; order = "asc" }
 
       const params = { page, limit: meta.limit, sortBy, order }
-      if (categories && categories !== "toutes") params.categories = categories
+      if (categories && categories !== "toutes") params.category = categories
 
       setLoading(true)
       // Axios renvoie déjà "data" → pas de { data: ... }
