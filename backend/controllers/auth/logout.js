@@ -13,8 +13,9 @@ export default async function logout(req, res) {
     httpOnly: c.httpOnly,
   };
 
+  
   if (!req.session) {
-    res.clearCookie(sessName, clearOpts);
+    req.clearCookie(sessName, clearOpts);
     return res.status(200).json({ ok: true });
   }
 

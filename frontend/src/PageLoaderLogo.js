@@ -19,7 +19,7 @@ export default function PageLoaderLogo({
     return () => clearTimeout(t);
   }, [loading, delayMs]);
 
-  if (!loading || !show) return null;
+  if (!loading || !show) return null; 
 
   return (
     <div

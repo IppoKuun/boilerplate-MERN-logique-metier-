@@ -50,8 +50,6 @@ const userSchema = new Schema({
     }
 })
 
-//JSP SI UTILE MTN OU PAS A VOIR AVEC COMMENT ON CREEER NV UTILISATEUR ETC//
-
 userSchema.methods.setPassword = async function (plain){
     this.passwordHash = await hashPassword(plain)
 }
@@ -68,7 +66,6 @@ userSchema.statics.FindByUsernameSecret = async function(username){
     return this.findOne({ username }).select("+passwordHash")
 }
 
-userSchema.index({ username: 1 }, { unique: true });   // empêche doublons
 userSchema.index({ role: 1, status: 1 });     
 
 export const User = mongoose.models.User || mongoose.model("User", userSchema);

@@ -2,8 +2,7 @@
 import axios from "axios";
 
 const env = (process.env.NODE_ENV || "").toLowerCase();
-const isDev = env === "development" || env === "developpement";
-
+const isDev = (process.env.NEXT_PUBLIC_APP_ENV || process.env.NODE_ENV || "").toLowerCase() !== "production";
 const explicitBaseUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
 const devBaseUrl = process.env.NEXT_PUBLIC_API_URL_DEV || "http://localhost:4000";
 const prodBaseUrl = process.env.NEXT_PUBLIC_API_URL_PROD || devBaseUrl;
@@ -48,11 +47,12 @@ api.interceptors.response.use(
 
     if (isDev) {
       console.error("[AXIOS ERROR]", {
-        status,
+        status: err.response?.status,
         msg,
-        data,
+        data: err.response?.data,
         url: err.config?.url,
         method: err.config?.method,
+        axios: err.toJSON ? err.toJSON() : err, // fallback brut
       });
     }
 

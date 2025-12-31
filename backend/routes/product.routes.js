@@ -4,6 +4,7 @@ import productControllers from "../controllers/productControllers.js"
 import validate from "../middlewares/validate.js";
 import productValidator from "../middlewares/product.validator.js";
 import { allowedCat } from "../middlewares/product.validator.js";
+import { checkOrigin } from "../middlewares/CSRF.js";
 
 const { productQuery, productBase, updateProductBody, idParam } = productValidator
 
@@ -22,6 +23,7 @@ productRouter.get("/slug/:slug", productControllers.getProductBySlug);
 
 productRouter.post(
   "/",
+  checkOrigin,
   validate({
     body: productBase,
   }, {
@@ -35,6 +37,6 @@ productRouter.post(
 productRouter.patch("/:id", validate(
     { body: updateProductBody },
     { allowedPaths: ["name","description","shortDesc","price","category","slug","images","isActive"] }
-  ) ,requireAuth(["owner", "admin"]) ,productControllers.updateProduct )
+  ) , checkOrigin, requireAuth(["owner", "admin"]) ,productControllers.updateProduct )
 
-productRouter.delete("/:id", validate({params: idParam }), requireAuth(["owner", "admin"]),  productControllers.deleteProduct)
+productRouter.delete("/:id", validate({params: idParam }), checkOrigin, requireAuth(["owner", "admin"]),  productControllers.deleteProduct)
