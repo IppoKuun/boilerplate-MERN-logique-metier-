@@ -4,10 +4,17 @@ import Image from "next/image"; // utile si tu gardes des images statiques (logo
 import GalleryClient from "@/app/products/[slug]/galerryClients.js"; 
 export const revalidate = 60;
 
+// Base API résolue via les variables d'environnement (prod/dev)
+const env = (process.env.NEXT_PUBLIC_APP_ENV || process.env.NODE_ENV || "").toLowerCase();
+const explicitBase = process.env.NEXT_PUBLIC_API_URL?.trim();
+const devBase = process.env.NEXT_PUBLIC_API_URL_DEV || "http://localhost:4000";
+const prodBase = process.env.NEXT_PUBLIC_API_URL_PROD || devBase;
+const apiBase = (explicitBase || (env === "production" ? prodBase : devBase)).replace(/\/$/, "");
+
 /** Récupération d'un produit par slug (SSR/SSG avec revalidate) */
 async function getProductBySlug(slug) {
   const res = await fetch(
-    `http://localhost:4000/products/slug/${encodeURIComponent(slug)}`,
+    `${apiBase}/products/slug/${encodeURIComponent(slug)}`,
     { next: { revalidate: 60 } }
   );
 
