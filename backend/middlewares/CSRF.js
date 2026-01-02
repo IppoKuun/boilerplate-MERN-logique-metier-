@@ -1,13 +1,23 @@
+const rawWhitelist = process.env.CORS_ORIGINS || process.env.FRONTEND_URL || "http://localhost:3000";
+const allowedOrigins = rawWhitelist
+  .split(",")
+  .map((o) => o.trim().replace(/\/$/, ""))
+  .filter(Boolean);
+
 export function checkOrigin(req, res, next) {
   const method = req.method.toUpperCase();
-  if (['GET', 'HEAD', 'OPTIONS'].includes(method)) return next();
+  if (["GET", "HEAD", "OPTIONS"].includes(method)) return next();
 
-  const origin = req.headers.origin;
-  const referer = req.headers.referer;
-  const allowed = process.env.FRONTEND_URL || 'http://localhost:3000';
+  const origin = (req.headers.origin || "").replace(/\/$/, "");
+  const referer = (req.headers.referer || "").replace(/\/$/, "");
 
-  if ((origin && origin !== allowed) || (referer && !referer.startsWith(allowed))) {
-    return res.status(403).json({ error: 'CSRF detected' });
+  const originOk = !origin || allowedOrigins.includes(origin);
+  const refererOk =
+    !referer ||
+    allowedOrigins.some((allowed) => referer === allowed || referer.startsWith(`${allowed}/`));
+
+  if (!originOk || !refererOk) {
+    return res.status(403).json({ error: "CSRF detected" });
   }
   next();
 }
