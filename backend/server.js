@@ -9,8 +9,8 @@ import MongoStore from "connect-mongo"
 import {auditRouter} from "./routes/auditRoutes.js"
 import {productRouter} from "./routes/product.routes.js"
 import { authRouter } from "./routes/auth.routes.js"
-import cors from "cors";
-import crypto from "crypto";
+import cors from "cors"
+import crypto from "crypto"
 
 const MONGO_URL = process.env.MONGO_Url || config.MONGO.Url;
 const PORT = process.env.PORT || 4000;
@@ -29,20 +29,30 @@ async function connectMongo() {
 
 const app = express()
 
+// CORS avec whitelist depuis l'env (FRONTEND_URL ou CORS_ORIGINS)
+const rawOrigins = process.env.CORS_ORIGINS || process.env.FRONTEND_URL || "http://localhost:3000"
+const allowedOrigins = rawOrigins
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean)
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL,
+  origin(origin, cb) {
+    if (!origin) return cb(null, true) // requêtes server-to-server
+    return allowedOrigins.includes(origin) ? cb(null, true) : cb(new Error("CORS blocked"))
+  },
   credentials: true
-}));
+}))
 app.use(express.json());
-app.options("*", cors({ origin: process.env.FRONTEND_URL, credentials: true }));
+app.options("*", cors({ origin: allowedOrigins, credentials: true }));
 
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 
 if (config.TRUST_PROXY){app.set("trust proxy", config.TRUST_PROXY)}
 
-
   
+
 //Si TRUST Proxy existe on l'utilise///
 
 //On Store la session dans la DB comme le cookies//
